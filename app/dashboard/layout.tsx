@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import {
   Home,
   Search,
@@ -52,6 +53,14 @@ export default function DashboardLayout({
           >
             <Menu className="h-6 w-6" />
           </Button>
+          <Image
+              src="/logo.png"
+              alt="Prep AI Logo"
+              width={36}
+              height={36}
+              priority
+              className="rounded-full"
+            />
           <h1 className="text-xl font-bold">Prep AI</h1>
         </div>
         <div className="flex items-center gap-3">

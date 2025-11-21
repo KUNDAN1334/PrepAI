@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
@@ -13,9 +14,17 @@ export default function Navigation() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="text-2xl font-bold">
-            Prep AI
+          {/* Logo and Brand Name */}
+          <Link href="/" className="flex items-center gap-2 text-2xl font-bold">
+            <Image
+              src="/logo.png"
+              alt="Prep AI Logo"
+              width={36}
+              height={36}
+              priority
+              className="rounded-full"
+            />
+            <span>Prep AI</span>
           </Link>
 
           {/* Desktop Navigation */}
