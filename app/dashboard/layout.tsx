@@ -63,11 +63,7 @@ export default function DashboardLayout({
             />
           <h1 className="text-xl font-bold">Prep AI</h1>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
-            {session?.user?.name?.[0]?.toUpperCase() || 'K'}
-          </div>
-        </div>
+        
       </div>
 
       {/* Sidebar - only shows when isSidebarOpen is true */}

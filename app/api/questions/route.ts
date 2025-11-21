@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db';
 import Question from '@/models/Question';
-import User from '@/models/User'; // FIXED: Add this import
+import User from '@/models/User';
 import { generateQuestionTags } from '@/lib/groq';
 
+// GET: Fetch and filter questions
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -21,15 +22,12 @@ export async function GET(req: NextRequest) {
     if (search) {
       query.$text = { $search: search };
     }
-
     if (difficulty && difficulty !== 'all') {
       query.difficulty = difficulty;
     }
-
     if (company) {
       query.companyName = new RegExp(company, 'i');
     }
-
     if (role) {
       query.jobRole = new RegExp(role, 'i');
     }
@@ -37,7 +35,7 @@ export async function GET(req: NextRequest) {
     const questions = await Question.find(query)
       .sort({ createdAt: -1 })
       .limit(50)
-      .populate('contributorId', 'name image');
+      .populate('contributorId', 'name image'); // Populates contributor info
 
     return NextResponse.json(questions);
   } catch (error) {
@@ -49,6 +47,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// POST: Create new question with AI tags + reputation update
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
@@ -71,7 +70,7 @@ export async function POST(req: NextRequest) {
       tags,
     });
 
-    // Update user reputation
+    // Update the user's reputation for contribution
     await User.findByIdAndUpdate(session.user.id, {
       $inc: {
         'reputation.totalPoints': 5,

@@ -1,11 +1,9 @@
-// app/dashboard/question-bank/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -13,21 +11,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, TrendingUp, Filter } from 'lucide-react';
+import { Search, Plus, Filter } from 'lucide-react';
 import Link from 'next/link';
-import QuestionCard from '@/components/questions/QuestionCard';
 
 export default function QuestionBankPage() {
   const [questions, setQuestions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
-    difficulty: '',
+    difficulty: 'all',
     company: '',
     role: '',
   });
 
   useEffect(() => {
     fetchQuestions();
+    // eslint-disable-next-line
   }, [filters, searchQuery]);
 
   const fetchQuestions = async () => {
@@ -76,7 +74,7 @@ export default function QuestionBankPage() {
             </div>
 
             <Select
-              value={filters.difficulty}
+              value={filters.difficulty || 'all'}
               onValueChange={(value) => setFilters({ ...filters, difficulty: value })}
             >
               <SelectTrigger>
@@ -114,7 +112,22 @@ export default function QuestionBankPage() {
           </Card>
         ) : (
           questions.map((question: any) => (
-            <QuestionCard key={question._id} question={question} />
+            <Card key={question._id}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-semibold">{question.companyName}</span>
+                  <span className="text-gray-500 text-sm">
+                    {question.jobRole} | {question.interviewRound} | {question.difficulty}
+                  </span>
+                </div>
+                <div className="mb-1">{question.questionText}</div>
+                {question.contributorAnswer && (
+                  <div className="mt-1 text-green-700 text-sm">
+                    <span className="font-bold">Approach:</span> {question.contributorAnswer}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           ))
         )}
       </div>
