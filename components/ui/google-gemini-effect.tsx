@@ -4,9 +4,9 @@ import { motion, MotionValue } from "motion/react";
 import React from "react";
 
 const transition = {
-  duration: 0,
-  ease: [0, 0, 1, 1],
+  duration: 0, 
 };
+
 
 
 export const GoogleGeminiEffect = ({
