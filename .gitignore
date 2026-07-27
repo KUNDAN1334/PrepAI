@@ -88,3 +88,10 @@ logs/
 # Temporary files
 tmp/
 temp/
+
+# Unrelated / nested projects that must never be part of this Next.js build.
+# PrepAI was previously committed as a broken submodule gitlink (no .gitmodules),
+# which made Vercel's clone step fail.
+/PrepAI/
+/Threaded_v0/
+/Authentication_API/

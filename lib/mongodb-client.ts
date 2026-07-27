@@ -1,28 +1,49 @@
 import { MongoClient } from 'mongodb';
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add MONGODB_URI to .env.local');
-}
+/**
+ * Lazily-created MongoClient promise.
+ *
+ * IMPORTANT: this module must not throw at import time. `lib/auth.ts` imports it,
+ * and every route/page imports `auth`, so a module-scope throw makes `next build`
+ * fail while collecting page data whenever MONGODB_URI is absent from the build
+ * environment. The connection is only established the first time something
+ * actually awaits this promise, i.e. at request time.
+ */
 
-const uri = process.env.MONGODB_URI;
-const options = {};
+const globalWithMongo = global as typeof globalThis & {
+  _mongoClientPromise?: Promise<MongoClient>;
+};
 
-let client;
-let clientPromise: Promise<MongoClient>;
+function createClientPromise(): Promise<MongoClient> {
+  const uri = process.env.MONGODB_URI || process.env.DATABASE_URL;
 
-if (process.env.NODE_ENV === 'development') {
-  let globalWithMongo = global as typeof globalThis & {
-    _mongoClientPromise?: Promise<MongoClient>;
-  };
+  if (!uri) {
+    return Promise.reject(
+      new Error('Please define the MONGODB_URI environment variable')
+    );
+  }
 
   if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    globalWithMongo._mongoClientPromise = client.connect();
+    globalWithMongo._mongoClientPromise = new MongoClient(uri, {}).connect();
   }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+
+  return globalWithMongo._mongoClientPromise;
 }
+
+const clientPromise = {
+  then(onfulfilled: unknown, onrejected: unknown) {
+    return createClientPromise().then(
+      onfulfilled as never,
+      onrejected as never
+    );
+  },
+  catch(onrejected: unknown) {
+    return createClientPromise().catch(onrejected as never);
+  },
+  finally(onfinally: () => void) {
+    return createClientPromise().finally(onfinally);
+  },
+  [Symbol.toStringTag]: 'Promise',
+} as unknown as Promise<MongoClient>;
 
 export default clientPromise;

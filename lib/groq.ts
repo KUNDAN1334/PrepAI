@@ -1,9 +1,27 @@
 // lib/groq.ts
 import Groq from 'groq-sdk';
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+/**
+ * The Groq SDK constructor throws when GROQ_API_KEY is missing or empty.
+ * Building the client at module scope therefore crashes `next build` (Next
+ * imports every route module while collecting page data), so the client is
+ * created lazily on first use instead.
+ */
+let groqClient: Groq | null = null;
+
+function getGroq(): Groq {
+  if (!groqClient) {
+    const apiKey = process.env.GROQ_API_KEY;
+
+    if (!apiKey) {
+      throw new Error('GROQ_API_KEY environment variable is not set');
+    }
+
+    groqClient = new Groq({ apiKey });
+  }
+
+  return groqClient;
+}
 
 export async function optimizeResume(resumeText: string, jobDescription: string) {
   const prompt = `Analyze this resume against the job description and provide optimization suggestions.
@@ -27,7 +45,7 @@ Provide a detailed analysis in JSON format:
 Return ONLY valid JSON, nothing else.`;
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       messages: [
         {
           role: 'system',
@@ -118,7 +136,7 @@ Format each question as a JSON object with:
 Return ONLY a valid JSON array.`;
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       messages: [
         {
           role: 'system',
@@ -191,7 +209,7 @@ Provide evaluation in JSON:
 Return ONLY valid JSON.`;
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       messages: [
         {
           role: 'system',
@@ -239,7 +257,7 @@ export async function generateQuestionTags(questionText: string): Promise<string
 Return as a JSON array of strings. Example: ["arrays", "dynamic-programming", "optimization"]`;
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       messages: [
         { role: 'system', content: 'Generate relevant technical tags. Return only JSON array.' },
         { role: 'user', content: prompt },

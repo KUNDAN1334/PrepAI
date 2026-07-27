@@ -1,7 +1,12 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { motion, MotionValue } from "motion/react";
+import { motion, useMotionValue } from "motion/react";
 import React from "react";
+
+// framer-motion v12 (which `motion/react` re-exports) no longer exports the
+// `MotionValue` type from its public entrypoint, so importing it by name is a
+// build-breaking type error. Derive the type from `useMotionValue` instead.
+type MotionValue<T = number> = ReturnType<typeof useMotionValue<T>>;
 
 const transition = {
   duration: 0, 
