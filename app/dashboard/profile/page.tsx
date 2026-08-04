@@ -43,7 +43,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">Profile Settings</h1>
+      <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Profile Settings</h1>
 
       <Card>
         <CardHeader>
@@ -70,15 +70,15 @@ export default function ProfilePage() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <p className="text-sm text-gray-600">Total Points</p>
+              <p className="text-sm text-ink-muted">Total Points</p>
               <p className="text-2xl font-bold">{userData.reputation?.totalPoints || 0}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Questions Contributed</p>
+              <p className="text-sm text-ink-muted">Questions Contributed</p>
               <p className="text-2xl font-bold">{userData.reputation?.questionContributions || 0}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Helpful Votes</p>
+              <p className="text-sm text-ink-muted">Helpful Votes</p>
               <p className="text-2xl font-bold">{userData.reputation?.helpfulVotes || 0}</p>
             </div>
           </div>

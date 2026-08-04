@@ -64,16 +64,16 @@ export default function ResumeOptimizerPage() {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 80) return 'text-azure';
+    if (score >= 60) return 'text-gold-ink';
+    return 'text-crimson';
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Resume Optimizer</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Resume Optimizer</h1>
+        <p className="text-ink-muted mt-2">
           Upload your resume and paste a job description to get AI-powered suggestions
         </p>
       </div>
@@ -145,7 +145,7 @@ export default function ResumeOptimizerPage() {
                     <div className={`text-6xl font-bold ${getScoreColor(analysis.matchScore || 0)}`}>
                       {analysis.matchScore || 0}%
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">Resume-JD Match</p>
+                    <p className="text-sm text-ink-muted mt-2">Resume-JD Match</p>
                   </div>
                   <Progress value={analysis.matchScore || 0} className="h-2" />
                   
@@ -173,7 +173,7 @@ export default function ResumeOptimizerPage() {
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       {analysis.missingKeywords.map((keyword: string, index: number) => (
-                        <Badge key={index} variant="outline" className="text-red-600">
+                        <Badge key={index} variant="outline" className="text-crimson">
                           {keyword}
                         </Badge>
                       ))}
@@ -205,13 +205,13 @@ export default function ResumeOptimizerPage() {
               {analysis.strengths && analysis.strengths.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-green-700">Strengths</CardTitle>
+                    <CardTitle className="text-azure">Strengths</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
                       {analysis.strengths.map((strength: string, index: number) => (
                         <li key={index} className="text-sm flex items-start">
-                          <span className="mr-2 text-green-600">✓</span>
+                          <span className="mr-2 text-azure">✓</span>
                           <span>{strength}</span>
                         </li>
                       ))}
@@ -224,13 +224,13 @@ export default function ResumeOptimizerPage() {
               {analysis.weaknesses && analysis.weaknesses.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-orange-700">Areas for Improvement</CardTitle>
+                    <CardTitle className="text-gold-ink">Areas for Improvement</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
                       {analysis.weaknesses.map((weakness: string, index: number) => (
                         <li key={index} className="text-sm flex items-start">
-                          <span className="mr-2 text-orange-600">→</span>
+                          <span className="mr-2 text-gold-ink">→</span>
                           <span>{weakness}</span>
                         </li>
                       ))}
@@ -247,9 +247,9 @@ export default function ResumeOptimizerPage() {
           ) : (
             <Card>
               <CardContent className="flex flex-col items-center justify-center h-[600px] text-center">
-                <FileText className="h-16 w-16 text-gray-300 mb-4" />
+                <FileText className="h-16 w-16 text-ink/25 mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No Analysis Yet</h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-ink-muted">
                   Upload your resume (DOCX format) and paste a job description to get started
                 </p>
               </CardContent>

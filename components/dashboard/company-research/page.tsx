@@ -62,7 +62,7 @@ export default function CompanyResearchPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Company Research</h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-ink-muted mt-2">
           Research interview experiences, salaries, and company culture
         </p>
       </div>
@@ -72,7 +72,7 @@ export default function CompanyResearchPage() {
         <CardContent className="pt-6">
           <div className="flex gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
               <Input
                 placeholder="Search by company name (e.g., Google, Microsoft)"
                 value={searchQuery}
@@ -129,10 +129,10 @@ export default function CompanyResearchPage() {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3">
-                        <Users className="h-6 w-6 text-gray-600" />
+                        <Users className="h-6 w-6 text-ink-muted" />
                         <div>
                           <p className="text-2xl font-bold">{companyData.metadata.total_posts}</p>
-                          <p className="text-sm text-gray-600">Total Posts</p>
+                          <p className="text-sm text-ink-muted">Total Posts</p>
                         </div>
                       </div>
                     </CardContent>
@@ -141,12 +141,12 @@ export default function CompanyResearchPage() {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3">
-                        <TrendingUp className="h-6 w-6 text-gray-600" />
+                        <TrendingUp className="h-6 w-6 text-ink-muted" />
                         <div>
                           <p className="text-2xl font-bold">
                             {companyData.interview_insights.common_rounds.length}
                           </p>
-                          <p className="text-sm text-gray-600">Interview Rounds</p>
+                          <p className="text-sm text-ink-muted">Interview Rounds</p>
                         </div>
                       </div>
                     </CardContent>
@@ -155,10 +155,10 @@ export default function CompanyResearchPage() {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3">
-                        <DollarSign className="h-6 w-6 text-gray-600" />
+                        <DollarSign className="h-6 w-6 text-ink-muted" />
                         <div>
                           <p className="text-2xl font-bold">{companyData.salary_data.length}</p>
-                          <p className="text-sm text-gray-600">Salary Reports</p>
+                          <p className="text-sm text-ink-muted">Salary Reports</p>
                         </div>
                       </div>
                     </CardContent>
@@ -172,8 +172,8 @@ export default function CompanyResearchPage() {
                       <Card key={index}>
                         <CardContent className="pt-4">
                           <h5 className="font-medium mb-2">{post.title}</h5>
-                          <p className="text-sm text-gray-600 line-clamp-2">{post.text}</p>
-                          <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                          <p className="text-sm text-ink-muted line-clamp-2">{post.text}</p>
+                          <div className="flex items-center gap-4 mt-3 text-xs text-ink-soft">
                             <span>{post.score}</span>
                             <span>{post.comments_count} comments</span>
                             <span>r/{post.subreddit}</span>
@@ -218,9 +218,9 @@ export default function CompanyResearchPage() {
                       ([difficulty, count]: [string, any]) => (
                         <div key={difficulty} className="flex items-center gap-3">
                           <span className="w-24 text-sm capitalize">{difficulty}</span>
-                          <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div className="flex-1 bg-secondary rounded-full h-2">
                             <div
-                              className="bg-black h-2 rounded-full"
+                              className="bg-ink h-2 rounded-full"
                               style={{
                                 width: `${(count / Math.max(...Object.values(companyData.interview_insights.difficulty_mentions) as number[])) * 100}%`,
                               }}
@@ -244,7 +244,7 @@ export default function CompanyResearchPage() {
               </CardHeader>
               <CardContent>
                 {companyData.salary_data.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">
+                  <p className="text-center text-ink-soft py-8">
                     No salary data found in recent posts
                   </p>
                 ) : (
@@ -260,7 +260,7 @@ export default function CompanyResearchPage() {
                             {salary.amount}
                             {salary.unit === 'LPA' ? ' LPA' : ' annual'}
                           </p>
-                          <p className="text-sm text-gray-600">{salary.source}</p>
+                          <p className="text-sm text-ink-muted">{salary.source}</p>
                         </div>
                       </div>
                     ))}
@@ -281,8 +281,8 @@ export default function CompanyResearchPage() {
                     <Card key={index}>
                       <CardContent className="pt-4">
                         <h5 className="font-semibold mb-2">{post.title}</h5>
-                        <p className="text-sm text-gray-700 mb-3">{post.text.substring(0, 300)}...</p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <p className="text-sm text-ink-muted mb-3">{post.text.substring(0, 300)}...</p>
+                        <div className="flex items-center gap-4 text-xs text-ink-soft">
                           <span>By {post.author}</span>
                           <span>•</span>
                           <span>{new Date(post.created_utc).toLocaleDateString()}</span>
@@ -291,7 +291,7 @@ export default function CompanyResearchPage() {
                             href={post.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
+                            className="text-azure hover:underline"
                           >
                             View on Reddit
                           </a>
@@ -307,9 +307,9 @@ export default function CompanyResearchPage() {
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Search className="h-16 w-16 text-gray-300 mb-4" />
+            <Search className="h-16 w-16 text-ink/25 mb-4" />
             <h3 className="text-lg font-semibold mb-2">Search for a Company</h3>
-            <p className="text-sm text-gray-600 text-center max-w-md">
+            <p className="text-sm text-ink-muted text-center max-w-md">
               Enter a company name to get interview insights, salary data, and employee
               experiences from Reddit discussions
             </p>

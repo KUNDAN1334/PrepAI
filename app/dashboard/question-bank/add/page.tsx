@@ -44,40 +44,40 @@ export default function QuestionBankAddPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
-      <h1 className="text-2xl font-bold text-black mb-6">Add Interview Question</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Add Interview Question</h1>
       <form
         onSubmit={handleSubmit}
-        className="space-y-6 bg-white border border-gray-200 rounded-lg p-8 shadow-lg"
+        className="space-y-6 bg-white border-2 border-ink rounded-[14px] p-8 shadow-[4px_4px_0_var(--ink)]"
       >
         <div>
-          <label className="block mb-1 text-gray-700 font-medium">Company</label>
+          <label className="block mb-1 text-ink-muted font-medium">Company</label>
           <input
             name="companyName"
             value={form.companyName}
             onChange={handleChange}
             placeholder="e.g., Google"
-            className="w-full p-2 rounded bg-gray-100 text-black border border-gray-300 outline-none"
+            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none"
             required
           />
         </div>
         <div>
-          <label className="block mb-1 text-gray-700 font-medium">Role / Position</label>
+          <label className="block mb-1 text-ink-muted font-medium">Role / Position</label>
           <input
             name="jobRole"
             value={form.jobRole}
             onChange={handleChange}
             placeholder="e.g., Software Engineer"
-            className="w-full p-2 rounded bg-gray-100 text-black border border-gray-300 outline-none"
+            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none"
             required
           />
         </div>
         <div>
-          <label className="block mb-1 text-gray-700 font-medium">Difficulty</label>
+          <label className="block mb-1 text-ink-muted font-medium">Difficulty</label>
           <select
             name="difficulty"
             value={form.difficulty}
             onChange={handleChange}
-            className="w-full p-2 rounded bg-gray-100 text-black border border-gray-300 outline-none"
+            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none"
           >
             <option value="easy">Easy</option>
             <option value="medium">Medium</option>
@@ -85,23 +85,23 @@ export default function QuestionBankAddPage() {
           </select>
         </div>
         <div>
-          <label className="block mb-1 text-gray-700 font-medium">Interview Round</label>
+          <label className="block mb-1 text-ink-muted font-medium">Interview Round</label>
           <input
             name="interviewRound"
             value={form.interviewRound}
             onChange={handleChange}
             placeholder="e.g., Technical Round 1"
-            className="w-full p-2 rounded bg-gray-100 text-black border border-gray-300 outline-none"
+            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none"
           />
         </div>
         {/* Question Type field */}
         <div>
-          <label className="block mb-1 text-gray-700 font-medium">Question Type</label>
+          <label className="block mb-1 text-ink-muted font-medium">Question Type</label>
           <select
             name="questionType"
             value={form.questionType}
             onChange={handleChange}
-            className="w-full p-2 rounded bg-gray-100 text-black border border-gray-300 outline-none"
+            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none"
             required
           >
             <option value="">Select Type</option>
@@ -112,20 +112,20 @@ export default function QuestionBankAddPage() {
           </select>
         </div>
         <div>
-          <label className="block mb-1 text-gray-700 font-medium">Question</label>
+          <label className="block mb-1 text-ink-muted font-medium">Question</label>
           <textarea
             name="questionText"
             value={form.questionText}
             onChange={handleChange}
             rows={4}
             placeholder="Enter the exact interview question..."
-            className="w-full p-2 rounded bg-gray-100 text-black border border-gray-300 outline-none resize-vertical"
+            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none resize-vertical"
             required
           />
         </div>
         <div>
-          <label className="block mb-1 text-gray-700 font-medium">
-            Your Answer / Approach <span className="text-gray-500">(optional)</span>
+          <label className="block mb-1 text-ink-muted font-medium">
+            Your Answer / Approach <span className="text-ink-soft">(optional)</span>
           </label>
           <textarea
             name="contributorAnswer"
@@ -133,13 +133,13 @@ export default function QuestionBankAddPage() {
             onChange={handleChange}
             rows={3}
             placeholder="How did you answer, or your suggested approach"
-            className="w-full p-2 rounded bg-gray-100 text-black border border-gray-300 outline-none resize-vertical"
+            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none resize-vertical"
           />
         </div>
         <Button type="submit" disabled={loading} className="w-full">
           {loading ? 'Submitting...' : 'Submit Question'}
         </Button>
-        {error && <div className="text-red-500 mt-4 text-center">{error}</div>}
+        {error && <div className="text-crimson mt-4 text-center">{error}</div>}
       </form>
     </div>
   );

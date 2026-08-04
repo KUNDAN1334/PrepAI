@@ -27,13 +27,13 @@ export default function QuestionCard({ question }: QuestionCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   const difficultyColors = {
-    easy: 'bg-green-100 text-green-700',
-    medium: 'bg-yellow-100 text-yellow-700',
-    hard: 'bg-red-100 text-red-700',
+    easy: 'status-info',
+    medium: 'status-warning',
+    hard: 'status-negative',
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-[6px_6px_0_var(--ink)]">
       <CardContent className="p-6">
         <div className="space-y-4">
           {/* Header */}
@@ -79,7 +79,7 @@ export default function QuestionCard({ question }: QuestionCardProps) {
                 <MessageSquare className="h-4 w-4 mr-1" />
                 {question.answerCount}
               </Button>
-              <div className="flex items-center gap-1 text-sm text-gray-500">
+              <div className="flex items-center gap-1 text-sm text-ink-soft">
                 <Eye className="h-4 w-4" />
                 {question.viewCount}
               </div>

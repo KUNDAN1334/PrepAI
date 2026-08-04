@@ -47,8 +47,8 @@ export default function ApplicationsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Application Tracker</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Application Tracker</h1>
+          <p className="text-ink-muted mt-2">
             Track and manage your job applications
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function ApplicationsPage() {
 
         <TabsContent value="calendar">
           <Card className="p-8 text-center">
-            <p className="text-gray-600">Calendar view coming soon...</p>
+            <p className="text-ink-muted">Calendar view coming soon...</p>
           </Card>
         </TabsContent>
       </Tabs>

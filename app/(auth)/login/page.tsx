@@ -4,7 +4,8 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import AuthShell from '@/components/auth/AuthShell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,12 +55,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Prep AI</CardTitle>
-          <CardDescription>Sign in to your account to continue</CardDescription>
-        </CardHeader>
+    <AuthShell
+      eyebrow="welcome back"
+      title="Sign in to Prep AI"
+      subtitle="Pick up right where you left off."
+    >
+      <Card className="w-full shadow-[8px_8px_0_var(--ink)]">
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -85,7 +86,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -99,36 +100,38 @@ export default function LoginPage() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t-[1.5px] border-dashed border-ink" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">Or continue with</span>
+            <div className="kicker relative flex justify-center">
+              <span className="bg-white px-2 text-ink-muted">Or continue with</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <Button
-              variant="outline"
+              type="button"
+              variant="brutal"
               onClick={() => handleOAuthSignIn('google')}
             >
               Google
             </Button>
             <Button
-              variant="outline"
+              type="button"
+              variant="brutal"
               onClick={() => handleOAuthSignIn('github')}
             >
               GitHub
             </Button>
           </div>
 
-          <p className="text-center text-sm text-gray-600">
-            Don't have an account?{' '}
-            <Link href="/register" className="font-semibold hover:underline">
+          <p className="text-center text-sm font-medium text-ink-muted">
+            Don&apos;t have an account?{' '}
+            <Link href="/register" className="font-bold text-crimson hover:underline">
               Sign up
             </Link>
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   );
 }

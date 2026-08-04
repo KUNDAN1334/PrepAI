@@ -77,7 +77,7 @@ export default function MockInterviewSessionPage({
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading interview session...</p>
+          <p className="text-ink-muted">Loading interview session...</p>
         </div>
       </div>
     );
@@ -87,7 +87,7 @@ export default function MockInterviewSessionPage({
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">No questions available for this session</p>
+          <p className="text-ink-muted mb-4">No questions available for this session</p>
           <Button onClick={() => router.push('/dashboard/mock-interview/setup')}>
             Start New Interview
           </Button>
@@ -244,10 +244,10 @@ export default function MockInterviewSessionPage({
             className="min-h-[300px]"
             disabled={isSubmitting}
           />
-          <div className="flex justify-between items-center text-sm text-gray-500">
+          <div className="flex justify-between items-center text-sm text-ink-soft">
             <span>{answer.length} characters</span>
             {answer.length < 100 && (
-              <span className="text-red-600">
+              <span className="text-crimson">
                 {100 - answer.length} more characters needed
               </span>
             )}
@@ -297,7 +297,7 @@ export default function MockInterviewSessionPage({
 
       {/* Debug info (remove in production) */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-400 p-4 bg-gray-50 rounded">
+        <div className="text-xs text-ink-soft p-4 bg-paper rounded">
           <div>Current Index: {currentQuestionIndex}</div>
           <div>Total Questions: {questions.length}</div>
           <div>Is Last: {isLastQuestion.toString()}</div>

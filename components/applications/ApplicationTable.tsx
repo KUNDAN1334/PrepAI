@@ -27,13 +27,14 @@ interface ApplicationTableProps {
 }
 
 export default function ApplicationTable({ applications, onUpdate }: ApplicationTableProps) {
+  // Brand status scale: neutral → warning → info → positive, with crimson for rejection.
   const statusColors = {
-    applied: 'bg-blue-100 text-blue-700',
-    screening: 'bg-yellow-100 text-yellow-700',
-    interview_scheduled: 'bg-purple-100 text-purple-700',
-    interview_completed: 'bg-indigo-100 text-indigo-700',
-    offer: 'bg-green-100 text-green-700',
-    rejected: 'bg-red-100 text-red-700',
+    applied: 'status-neutral',
+    screening: 'status-warning',
+    interview_scheduled: 'status-info',
+    interview_completed: 'status-info',
+    offer: 'status-positive',
+    rejected: 'status-negative',
   };
 
   return (
@@ -53,7 +54,7 @@ export default function ApplicationTable({ applications, onUpdate }: Application
         <TableBody>
           {applications.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+              <TableCell colSpan={7} className="text-center py-8 text-ink-soft">
                 No applications found. Add your first application!
               </TableCell>
             </TableRow>
@@ -90,7 +91,7 @@ export default function ApplicationTable({ applications, onUpdate }: Application
                           Edit
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
+                      <DropdownMenuItem className="text-crimson">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>

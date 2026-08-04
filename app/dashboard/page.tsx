@@ -49,8 +49,8 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       {/* Welcome section */}
       <div>
-        <h1 className="text-3xl font-bold">Welcome back, {user?.name || 'User'}!</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Welcome back, {user?.name || 'User'}!</h1>
+        <p className="text-ink-muted mt-2">
           Here's your placement preparation progress
         </p>
       </div>
@@ -60,48 +60,48 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Resume Scans</CardTitle>
-            <FileText className="h-4 w-4 text-gray-600" />
+            <FileText className="h-4 w-4 text-ink-muted" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {quota.resumeOptimizations?.usedToday || 0}/{quota.resumeOptimizations?.dailyLimit || 5}
             </div>
-            <p className="text-xs text-gray-600 mt-1">Daily limit</p>
+            <p className="text-xs text-ink-muted mt-1">Daily limit</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Mock Interviews</CardTitle>
-            <Mic className="h-4 w-4 text-gray-600" />
+            <Mic className="h-4 w-4 text-ink-muted" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{interviewCount}</div>
-            <p className="text-xs text-gray-600 mt-1">Completed this month</p>
+            <p className="text-xs text-ink-muted mt-1">Completed this month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Applications</CardTitle>
-            <Briefcase className="h-4 w-4 text-gray-600" />
+            <Briefcase className="h-4 w-4 text-ink-muted" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{applicationCount}</div>
-            <p className="text-xs text-gray-600 mt-1">Total tracked</p>
+            <p className="text-xs text-ink-muted mt-1">Total tracked</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Reputation</CardTitle>
-            <TrendingUp className="h-4 w-4 text-gray-600" />
+            <TrendingUp className="h-4 w-4 text-ink-muted" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {user?.reputation?.totalPoints || 0}
             </div>
-            <p className="text-xs text-gray-600 mt-1">Total points</p>
+            <p className="text-xs text-ink-muted mt-1">Total points</p>
           </CardContent>
         </Card>
       </div>

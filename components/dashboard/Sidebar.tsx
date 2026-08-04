@@ -50,14 +50,14 @@ export default function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-64 bg-black text-white transition-transform duration-300 lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 w-64 border-r-2 border-ink bg-sidebar text-sidebar-foreground transition-transform duration-300 lg:translate-x-0',
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex h-16 items-center border-b border-gray-800 px-6">
-            <h1 className="text-2xl font-bold">Prep AI</h1>
+          <div className="flex h-16 items-center border-b border-sidebar-border px-6">
+            <h1 className="text-2xl font-extrabold tracking-[-0.01em]">Prep AI</h1>
           </div>
 
           {/* Navigation */}
@@ -70,10 +70,10 @@ export default function Sidebar() {
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors',
                     isActive
-                      ? 'bg-white text-black'
-                      : 'text-gray-300 hover:bg-gray-900 hover:text-white'
+                      ? 'bg-crimson text-white'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-white'
                   )}
                 >
                   <item.icon className="h-5 w-5" />
@@ -84,10 +84,10 @@ export default function Sidebar() {
           </nav>
 
           {/* Logout button */}
-          <div className="border-t border-gray-800 p-4">
+          <div className="border-t border-sidebar-border p-4">
             <Button
               variant="ghost"
-              className="w-full justify-start text-gray-300 hover:bg-gray-900 hover:text-white"
+              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
               onClick={() => signOut({ callbackUrl: '/login' })}
             >
               <LogOut className="mr-3 h-5 w-5" />
@@ -100,7 +100,7 @@ export default function Sidebar() {
       {/* Overlay for mobile */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-30 bg-ink/50 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

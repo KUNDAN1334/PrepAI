@@ -61,11 +61,11 @@ export default function CompanyResearchPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Sparkles className="h-8 w-8 text-blue-600" />
+        <h1 className="font-display text-4xl font-normal tracking-[-0.01em] flex items-center gap-2">
+          <Sparkles className="h-8 w-8 text-azure" />
           AI Company Research
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <p className="text-ink-muted mt-2">
           Get AI-powered insights about company interviews and culture
         </p>
       </div>
@@ -97,7 +97,7 @@ export default function CompanyResearchPage() {
               disabled={isLoading}
               rows={3}
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-ink-soft">
               Leave empty for a comprehensive interview preparation guide
             </p>
           </div>
@@ -160,19 +160,19 @@ export default function CompanyResearchPage() {
           </CardHeader>
           <CardContent>
             {research.ai_insights?.error ? (
-              <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg text-red-800 dark:text-red-200">
+              <div className="status-negative rounded-lg border p-4">
                 <p className="font-semibold">Error:</p>
                 <p>{research.ai_insights.error}</p>
               </div>
             ) : (
-              <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div className="prose prose-sm max-w-none">
                 <ReactMarkdown
                   components={{
                     h2: ({node, ...props}) => (
-                      <h2 className="mt-6 mb-3 text-xl font-bold border-b pb-2 text-gray-900 dark:text-gray-100" {...props} />
+                      <h2 className="mt-6 mb-3 text-xl font-bold border-b pb-2 text-ink" {...props} />
                     ),
                     h3: ({node, ...props}) => (
-                      <h3 className="mt-4 mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100" {...props} />
+                      <h3 className="mt-4 mb-2 text-lg font-semibold text-ink" {...props} />
                     ),
                     ul: ({node, ...props}) => (
                       <ul className="list-disc pl-6 space-y-1" {...props} />
@@ -184,10 +184,10 @@ export default function CompanyResearchPage() {
                       <p className="mb-3 leading-relaxed" {...props} />
                     ),
                     strong: ({node, ...props}) => (
-                      <strong className="font-bold text-gray-900 dark:text-gray-100" {...props} />
+                      <strong className="font-bold text-ink" {...props} />
                     ),
                     a: ({node, ...props}) => (
-                      <a className="font-bold text-gray-900 dark:text-gray-100 underline" {...props} />
+                      <a className="font-bold text-ink underline" {...props} />
                     ),
                   }}
                 >

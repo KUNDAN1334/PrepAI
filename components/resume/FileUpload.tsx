@@ -55,14 +55,14 @@ export default function FileUpload({
           onDragOver={(e) => e.preventDefault()}
           className={cn(
             'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
-            'hover:border-gray-400 hover:bg-gray-50'
+            'hover:border-ink/35 hover:bg-paper'
           )}
         >
-          <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <Upload className="h-12 w-12 mx-auto mb-4 text-ink-soft" />
           <p className="text-sm font-medium mb-1">
             Drop your resume here or click to browse
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-ink-soft">
             {accept.toUpperCase()} • Max {maxSize / 1024 / 1024}MB
           </p>
           <input
@@ -81,10 +81,10 @@ export default function FileUpload({
       ) : (
         <div className="flex items-center justify-between p-4 border rounded-lg">
           <div className="flex items-center gap-3">
-            <File className="h-8 w-8 text-gray-600" />
+            <File className="h-8 w-8 text-ink-muted" />
             <div>
               <p className="text-sm font-medium">{selectedFile.name}</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ink-soft">
                 {(selectedFile.size / 1024).toFixed(2)} KB
               </p>
             </div>

@@ -26,23 +26,23 @@ export default function ApplicationCard({ application, onDelete }: ApplicationCa
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'status-negative';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'status-warning';
       case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'status-info';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'status-neutral';
     }
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-[6px_6px_0_var(--ink)]">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h3 className="font-semibold text-lg">{application.companyName}</h3>
-            <p className="text-sm text-gray-600">{application.position}</p>
+            <p className="text-sm text-ink-muted">{application.position}</p>
           </div>
           <Badge className={getPriorityColor(application.priority)}>
             {application.priority}
@@ -50,20 +50,20 @@ export default function ApplicationCard({ application, onDelete }: ApplicationCa
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-ink-muted">
           <Calendar className="h-4 w-4" />
           <span>{new Date(application.applicationDate).toLocaleDateString()}</span>
         </div>
 
         {application.location && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-ink-muted">
             <MapPin className="h-4 w-4" />
             <span>{application.location}</span>
           </div>
         )}
 
         {application.salary && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-ink-muted">
             <DollarSign className="h-4 w-4" />
             <span>{application.salary}</span>
           </div>

@@ -127,7 +127,7 @@ export default function NewApplicationPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Add New Application</h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-ink-muted mt-2">
           Track a new job application
         </p>
       </div>
@@ -366,7 +366,7 @@ export default function NewApplicationPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {interviewRounds.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">
+              <p className="text-sm text-ink-soft text-center py-4">
                 No interview rounds added yet
               </p>
             ) : (
@@ -380,7 +380,7 @@ export default function NewApplicationPage() {
                       size="icon"
                       onClick={() => removeInterviewRound(index)}
                     >
-                      <Trash2 className="h-4 w-4 text-red-600" />
+                      <Trash2 className="h-4 w-4 text-crimson" />
                     </Button>
                   </div>
 

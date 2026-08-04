@@ -17,7 +17,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
-          <Briefcase className="h-4 w-4 text-gray-600" />
+          <Briefcase className="h-4 w-4 text-ink-muted" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats.total}</div>
@@ -27,7 +27,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-          <Clock className="h-4 w-4 text-yellow-600" />
+          <Clock className="h-4 w-4 text-gold-ink" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats.pending}</div>
@@ -37,7 +37,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">Offers</CardTitle>
-          <CheckCircle className="h-4 w-4 text-green-600" />
+          <CheckCircle className="h-4 w-4 text-azure" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats.offers}</div>
@@ -47,7 +47,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">Rejected</CardTitle>
-          <XCircle className="h-4 w-4 text-red-600" />
+          <XCircle className="h-4 w-4 text-crimson" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats.rejected}</div>

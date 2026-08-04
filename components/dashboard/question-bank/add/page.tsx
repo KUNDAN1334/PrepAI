@@ -94,7 +94,7 @@ export default function AddQuestionPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Add Interview Question</h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-ink-muted mt-2">
           Share your interview experience with the community
         </p>
       </div>
@@ -221,7 +221,7 @@ export default function AddQuestionPage() {
                 rows={6}
                 required
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ink-soft">
                 {formData.questionText.length}/50 characters minimum
               </p>
             </div>

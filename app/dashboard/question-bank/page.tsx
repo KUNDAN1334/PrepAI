@@ -44,8 +44,8 @@ export default function QuestionBankPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Interview Question Bank</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Interview Question Bank</h1>
+          <p className="text-ink-muted mt-2">
             Community-driven interview questions and answers
           </p>
         </div>
@@ -63,7 +63,7 @@ export default function QuestionBankPage() {
           <div className="grid gap-4 md:grid-cols-4">
             <div className="md:col-span-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
                 <Input
                   placeholder="Search questions, companies, roles..."
                   value={searchQuery}
@@ -101,7 +101,7 @@ export default function QuestionBankPage() {
         {questions.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-gray-600">No questions found</p>
+              <p className="text-ink-muted">No questions found</p>
               <Link href="/dashboard/question-bank/add">
                 <Button variant="outline" className="mt-4">
                   <Plus className="mr-2 h-4 w-4" />
@@ -116,13 +116,13 @@ export default function QuestionBankPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="font-semibold">{question.companyName}</span>
-                  <span className="text-gray-500 text-sm">
+                  <span className="text-ink-soft text-sm">
                     {question.jobRole} | {question.interviewRound} | {question.difficulty}
                   </span>
                 </div>
                 <div className="mb-1">{question.questionText}</div>
                 {question.contributorAnswer && (
-                  <div className="mt-1 text-green-700 text-sm">
+                  <div className="mt-1 text-azure text-sm">
                     <span className="font-bold">Approach:</span> {question.contributorAnswer}
                   </div>
                 )}

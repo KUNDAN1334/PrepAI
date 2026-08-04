@@ -32,11 +32,11 @@ export default function Header({ user }: HeaderProps) {
     .toUpperCase() || 'U';
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-white px-6 lg:px-8">
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b-[1.5px] border-ink bg-white px-6 lg:px-8">
       {/* Search bar */}
       <div className="flex flex-1 items-center gap-4">
         <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
           <Input
             type="search"
             placeholder="Search companies, questions..."
@@ -50,7 +50,7 @@ export default function Header({ user }: HeaderProps) {
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-600" />
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-crimson" />
         </Button>
 
         {/* User menu */}
@@ -59,7 +59,7 @@ export default function Header({ user }: HeaderProps) {
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar>
                 <AvatarImage src={user.image || ''} alt={user.name || ''} />
-                <AvatarFallback className="bg-black text-white">
+                <AvatarFallback className="bg-ink font-bold text-white">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -68,8 +68,8 @@ export default function Header({ user }: HeaderProps) {
           <DropdownMenuContent className="w-56" align="end">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-gray-500">{user.email}</p>
+                <p className="text-sm font-bold">{user.name}</p>
+                <p className="text-xs text-ink-soft">{user.email}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -81,7 +81,7 @@ export default function Header({ user }: HeaderProps) {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="text-red-600"
+              className="text-crimson"
               onClick={() => signOut({ callbackUrl: '/login' })}
             >
               Logout

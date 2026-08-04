@@ -28,11 +28,13 @@ interface KanbanBoardProps {
   onUpdate: () => void;
 }
 
+// Column tints follow the landing page's pipeline board: neutral → peach →
+// azure → gold, so the dashboard reads as the same product as the marketing site.
 const columns = [
-  { id: 'applied', title: 'Applied', color: 'bg-blue-100' },
-  { id: 'screening', title: 'Screening', color: 'bg-yellow-100' },
-  { id: 'interview_scheduled', title: 'Interview', color: 'bg-purple-100' },
-  { id: 'offer', title: 'Offer', color: 'bg-green-100' },
+  { id: 'applied', title: 'Applied', color: 'bg-muted' },
+  { id: 'screening', title: 'Screening', color: 'bg-peach' },
+  { id: 'interview_scheduled', title: 'Interview', color: 'bg-azure/20' },
+  { id: 'offer', title: 'Offer', color: 'bg-gold/30' },
 ];
 
 export default function KanbanBoard({ applications, onUpdate }: KanbanBoardProps) {
@@ -92,7 +94,7 @@ export default function KanbanBoard({ applications, onUpdate }: KanbanBoardProps
             <div className={`${column.color} rounded-lg p-3`}>
               <h3 className="font-semibold text-sm">
                 {column.title}
-                <span className="ml-2 text-xs text-gray-600">
+                <span className="ml-2 text-xs text-ink-muted">
                   ({getApplicationsByStatus(column.id).length})
                 </span>
               </h3>

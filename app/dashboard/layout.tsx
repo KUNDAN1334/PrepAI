@@ -42,14 +42,15 @@ export default function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-paper">
       {/* Top bar with toggle button */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b-[1.5px] border-ink bg-white/90 px-4 py-3 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            aria-label="Toggle navigation"
           >
             <Menu className="h-6 w-6" />
           </Button>
@@ -61,27 +62,28 @@ export default function DashboardLayout({
               priority
               className="rounded-full"
             />
-          <h1 className="text-xl font-bold">Prep AI</h1>
+          <h1 className="text-xl font-extrabold tracking-[-0.01em]">Prep AI</h1>
         </div>
-        
+
       </div>
 
       {/* Sidebar - only shows when isSidebarOpen is true */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-64 bg-black text-white transition-transform duration-300',
+          'fixed inset-y-0 left-0 z-40 w-64 border-r-2 border-ink bg-sidebar text-sidebar-foreground transition-transform duration-300',
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-800">
-            <h1 className="text-xl font-bold">Prep AI</h1>
+          <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-6">
+            <h1 className="text-xl font-extrabold tracking-[-0.01em]">Prep AI</h1>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsSidebarOpen(false)}
-              className="text-white hover:bg-gray-800"
+              aria-label="Close navigation"
+              className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
             >
               <X className="h-5 w-5" />
             </Button>
@@ -98,10 +100,10 @@ export default function DashboardLayout({
                       href={item.href}
                       onClick={() => setIsSidebarOpen(false)}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold transition-colors',
                         isActive
-                          ? 'bg-white text-black'
-                          : 'text-white hover:bg-gray-800'
+                          ? 'bg-crimson text-white'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-white'
                       )}
                     >
                       <item.icon className="h-5 w-5" />
@@ -114,13 +116,13 @@ export default function DashboardLayout({
           </nav>
 
           {/* User section at bottom */}
-          <div className="border-t border-gray-800 p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-sm">
+          <div className="border-t border-sidebar-border p-4">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold text-sm font-bold text-ink">
                 {session?.user?.name?.[0]?.toUpperCase() || 'N'}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-white">
                   {session?.user?.name || 'User'}
                 </p>
               </div>
@@ -128,7 +130,7 @@ export default function DashboardLayout({
             <Button
               variant="ghost"
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className="w-full justify-start text-white hover:bg-gray-800"
+              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Logout
@@ -140,7 +142,7 @@ export default function DashboardLayout({
       {/* Overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          className="fixed inset-0 z-30 bg-ink/50"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}

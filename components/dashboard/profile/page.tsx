@@ -120,7 +120,7 @@ export default function ProfilePage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Profile Settings</h1>
-        <p className="text-gray-600 mt-2">Manage your account information and preferences</p>
+        <p className="text-ink-muted mt-2">Manage your account information and preferences</p>
       </div>
 
       {/* Profile Picture & Stats */}
@@ -130,7 +130,7 @@ export default function ProfilePage() {
             <div className="text-center">
               <Avatar className="h-24 w-24">
                 <AvatarImage src={userData?.image || ''} />
-                <AvatarFallback className="bg-black text-white text-2xl">
+                <AvatarFallback className="bg-ink text-white text-2xl">
                   {userData?.name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -143,19 +143,19 @@ export default function ProfilePage() {
             <div className="flex-1 grid gap-4 md:grid-cols-3">
               <div className="text-center p-4 border rounded-lg">
                 <div className="text-2xl font-bold">{userData?.reputation?.totalPoints || 0}</div>
-                <p className="text-sm text-gray-600">Reputation Points</p>
+                <p className="text-sm text-ink-muted">Reputation Points</p>
               </div>
               <div className="text-center p-4 border rounded-lg">
                 <div className="text-2xl font-bold">
                   {userData?.reputation?.questionContributions || 0}
                 </div>
-                <p className="text-sm text-gray-600">Questions Contributed</p>
+                <p className="text-sm text-ink-muted">Questions Contributed</p>
               </div>
               <div className="text-center p-4 border rounded-lg">
                 <div className="text-2xl font-bold">
                   {userData?.reputation?.badges?.length || 0}
                 </div>
-                <p className="text-sm text-gray-600">Badges Earned</p>
+                <p className="text-sm text-ink-muted">Badges Earned</p>
               </div>
             </div>
           </div>
@@ -271,7 +271,7 @@ export default function ProfilePage() {
                 {role}
                 <button
                   onClick={() => removeTargetRole(role)}
-                  className="ml-2 hover:text-red-600"
+                  className="ml-2 hover:text-crimson"
                 >
                   ×
                 </button>
@@ -344,30 +344,30 @@ export default function ProfilePage() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Resume Optimizations</p>
+              <p className="text-sm text-ink-muted mb-1">Resume Optimizations</p>
               <p className="text-2xl font-bold">
                 {userData?.quota?.resumeOptimizations?.usedToday || 0}/
                 {userData?.quota?.resumeOptimizations?.dailyLimit || 5}
               </p>
-              <p className="text-xs text-gray-500 mt-1">Daily limit</p>
+              <p className="text-xs text-ink-soft mt-1">Daily limit</p>
             </div>
 
             <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Mock Interviews</p>
+              <p className="text-sm text-ink-muted mb-1">Mock Interviews</p>
               <p className="text-2xl font-bold">
                 {userData?.quota?.mockInterviews?.usedThisMonth || 0}/
                 {userData?.quota?.mockInterviews?.monthlyLimit || 10}
               </p>
-              <p className="text-xs text-gray-500 mt-1">Monthly limit</p>
+              <p className="text-xs text-ink-soft mt-1">Monthly limit</p>
             </div>
 
             <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">API Calls</p>
+              <p className="text-sm text-ink-muted mb-1">API Calls</p>
               <p className="text-2xl font-bold">
                 {userData?.quota?.groqApiCalls?.usedToday || 0}/
                 {userData?.quota?.groqApiCalls?.dailyLimit || 50}
               </p>
-              <p className="text-xs text-gray-500 mt-1">Daily limit</p>
+              <p className="text-xs text-ink-soft mt-1">Daily limit</p>
             </div>
           </div>
         </CardContent>
@@ -383,9 +383,9 @@ export default function ProfilePage() {
             <div className="grid gap-4 md:grid-cols-4">
               {userData.reputation.badges.map((badge: any, index: number) => (
                 <div key={index} className="flex flex-col items-center p-4 border rounded-lg">
-                  <Award className="h-8 w-8 text-yellow-600 mb-2" />
+                  <Award className="h-8 w-8 text-gold-ink mb-2" />
                   <p className="font-medium text-sm text-center">{badge.badgeName}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-ink-soft mt-1">
                     {new Date(badge.earnedAt).toLocaleDateString()}
                   </p>
                 </div>

@@ -77,8 +77,8 @@ export default function MockInterviewPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Mock Interview Setup</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Mock Interview Setup</h1>
+        <p className="text-ink-muted mt-2">
           Configure your mock interview and get AI-generated questions
         </p>
       </div>

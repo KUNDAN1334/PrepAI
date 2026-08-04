@@ -83,8 +83,8 @@ export default function NewApplicationPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold">Add New Application</h1>
-          <p className="text-gray-600 mt-1">Track your job application progress</p>
+          <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Add New Application</h1>
+          <p className="text-ink-muted mt-1">Track your job application progress</p>
         </div>
       </div>
 

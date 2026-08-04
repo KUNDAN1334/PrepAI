@@ -56,7 +56,7 @@ export default function FeedbackPage({
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading feedback...</p>
+          <p className="text-ink-muted">Loading feedback...</p>
         </div>
       </div>
     );
@@ -66,7 +66,7 @@ export default function FeedbackPage({
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Feedback not available</p>
+          <p className="text-ink-muted mb-4">Feedback not available</p>
           <Link href="/dashboard/mock-interview/setup">
             <Button>Start New Interview</Button>
           </Link>
@@ -78,7 +78,7 @@ export default function FeedbackPage({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Interview Feedback</h1>
+        <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Interview Feedback</h1>
         <Link href="/dashboard">
           <Button variant="outline">
             <Home className="mr-2 h-4 w-4" />
@@ -96,9 +96,9 @@ export default function FeedbackPage({
           <div className="text-center py-8">
             <div className="text-6xl font-bold mb-2">
               {feedback.averageScore ? feedback.averageScore.toFixed(1) : 'N/A'}
-              <span className="text-2xl text-gray-500">/10</span>
+              <span className="text-2xl text-ink-soft">/10</span>
             </div>
-            <p className="text-gray-600">
+            <p className="text-ink-muted">
               Completed {feedback.questionsAnswered} of {feedback.totalQuestions} questions
             </p>
             <div className="mt-4 max-w-md mx-auto">
@@ -118,23 +118,23 @@ export default function FeedbackPage({
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex justify-between">
-            <span className="text-gray-600">Company:</span>
+            <span className="text-ink-muted">Company:</span>
             <span className="font-medium">{feedback.companyName}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Role:</span>
+            <span className="text-ink-muted">Role:</span>
             <span className="font-medium">{feedback.jobRole}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Type:</span>
+            <span className="text-ink-muted">Type:</span>
             <span className="font-medium">{feedback.interviewType}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Difficulty:</span>
+            <span className="text-ink-muted">Difficulty:</span>
             <Badge>{feedback.difficulty}</Badge>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Status:</span>
+            <span className="text-ink-muted">Status:</span>
             <Badge variant={feedback.status === 'completed' ? 'default' : 'secondary'}>
               {feedback.status}
             </Badge>
@@ -162,7 +162,7 @@ export default function FeedbackPage({
                   <div className="text-right ml-4">
                     <div className="text-3xl font-bold">
                       {q.evaluation?.score || 'N/A'}
-                      <span className="text-sm text-gray-500">/10</span>
+                      <span className="text-sm text-ink-soft">/10</span>
                     </div>
                   </div>
                 </div>
@@ -172,7 +172,7 @@ export default function FeedbackPage({
                   <>
                     {q.evaluation.strengths && q.evaluation.strengths.length > 0 && (
                       <div>
-                        <h4 className="font-semibold text-green-700 mb-2">✓ Strengths</h4>
+                        <h4 className="font-semibold text-azure mb-2">✓ Strengths</h4>
                         <ul className="list-disc list-inside space-y-1">
                           {q.evaluation.strengths.map((s: string, i: number) => (
                             <li key={i} className="text-sm">{s}</li>
@@ -183,7 +183,7 @@ export default function FeedbackPage({
 
                     {q.evaluation.improvements && q.evaluation.improvements.length > 0 && (
                       <div>
-                        <h4 className="font-semibold text-orange-700 mb-2">→ Areas for Improvement</h4>
+                        <h4 className="font-semibold text-gold-ink mb-2">→ Areas for Improvement</h4>
                         <ul className="list-disc list-inside space-y-1">
                           {q.evaluation.improvements.map((i: string, idx: number) => (
                             <li key={idx} className="text-sm">{i}</li>
@@ -194,7 +194,7 @@ export default function FeedbackPage({
 
                     {q.evaluation.missedKeyPoints && q.evaluation.missedKeyPoints.length > 0 && (
                       <div>
-                        <h4 className="font-semibold text-red-700 mb-2">✗ Missed Key Points</h4>
+                        <h4 className="font-semibold text-crimson mb-2">✗ Missed Key Points</h4>
                         <ul className="list-disc list-inside space-y-1">
                           {q.evaluation.missedKeyPoints.map((p: string, i: number) => (
                             <li key={i} className="text-sm">{p}</li>
@@ -204,27 +204,27 @@ export default function FeedbackPage({
                     )}
 
                     {q.evaluation.overallFeedback && (
-                      <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="bg-paper p-4 rounded-lg">
                         <h4 className="font-semibold mb-2">Overall Feedback</h4>
                         <p className="text-sm">{q.evaluation.overallFeedback}</p>
                       </div>
                     )}
 
                     {q.evaluation.exampleAnswer && (
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <h4 className="font-semibold mb-2 text-blue-900">Example Answer</h4>
-                        <p className="text-sm text-blue-800">{q.evaluation.exampleAnswer}</p>
+                      <div className="status-info rounded-lg border p-4">
+                        <h4 className="font-semibold mb-2 text-ink">Example Answer</h4>
+                        <p className="text-sm">{q.evaluation.exampleAnswer}</p>
                       </div>
                     )}
 
                     {q.timeSpent && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-ink-soft">
                         Time spent: {Math.floor(q.timeSpent / 60)}m {q.timeSpent % 60}s
                       </div>
                     )}
                   </>
                 ) : (
-                  <div className="text-gray-500 text-sm">No evaluation available for this question</div>
+                  <div className="text-ink-soft text-sm">No evaluation available for this question</div>
                 )}
               </CardContent>
             </Card>
@@ -232,7 +232,7 @@ export default function FeedbackPage({
         ) : (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-gray-500">No question feedback available</p>
+              <p className="text-ink-soft">No question feedback available</p>
             </CardContent>
           </Card>
         )}
