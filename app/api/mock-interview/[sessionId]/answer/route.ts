@@ -1,110 +1,99 @@
 // app/api/mock-interview/[sessionId]/answer/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { evaluateInterviewAnswer } from '@/lib/groq';
 import connectDB from '@/lib/db';
-import mongoose from 'mongoose';
+import InterviewSession from '@/models/InterviewSession';
+import InterviewQuestion from '@/models/InterviewQuestion';
+import { evaluateInterviewAnswer } from '@/lib/groq';
+import { ApiError, parseBody, requireObjectId, requireUserId, withErrorHandling } from '@/lib/api';
+import { answerSubmitSchema } from '@/lib/validation';
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ sessionId: string }> } // Mark as Promise
-) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
-    // Await params first
-    const { sessionId } = await params;
+/**
+ * Grades one answer. The client calls this once per question as the candidate
+ * moves through the interview, so an abandoned session still keeps the feedback
+ * for everything answered so far.
+ */
+export const PUT = withErrorHandling(
+  'mock-interview:answer',
+  async (req: NextRequest, context: { params: Promise<{ sessionId: string }> }) => {
+    const userId = await requireUserId();
+    const { sessionId } = await context.params;
+    requireObjectId(sessionId, 'session id');
 
-    const { questionNumber, answer, timeSpent } = await req.json();
+    const { questionNumber, answer, timeSpent } = await parseBody(req, answerSubmitSchema);
 
     await connectDB();
 
-    // Import models
-    await import('@/models/InterviewSession');
-    await import('@/models/InterviewQuestion');
+    const interviewSession = await InterviewSession.findOne({ _id: sessionId, userId });
 
-    const InterviewSession = mongoose.models.InterviewSession;
-    const InterviewQuestion = mongoose.models.InterviewQuestion;
+    if (!interviewSession) throw new ApiError(404, 'Session not found');
 
-    // Verify session ownership
-    const interviewSession = await InterviewSession.findOne({
-      _id: sessionId,
-      userId: session.user.id
-    });
+    const question = await InterviewQuestion.findOne({ sessionId, questionNumber });
 
-    if (!interviewSession) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    if (!question) throw new ApiError(404, 'Question not found');
+
+    /**
+     * The answer is saved even when grading fails. Losing a candidate's 400-word
+     * answer because the model hiccuped is worse than showing "not graded" on one
+     * card, and the feedback page renders ungraded answers gracefully.
+     */
+    let evaluation: Awaited<ReturnType<typeof evaluateInterviewAnswer>> | null = null;
+    let evaluationError: string | null = null;
+
+    try {
+      evaluation = await evaluateInterviewAnswer({
+        question: question.questionText,
+        answer,
+        expectedKeyPoints: question.expectedKeyPoints ?? [],
+        category: question.category,
+        difficulty: question.difficulty,
+      });
+    } catch (error) {
+      console.error('[mock-interview:answer] evaluation failed:', error);
+      evaluationError = 'Your answer was saved, but AI grading is unavailable right now.';
     }
 
-    // Find the question
-    const question = await InterviewQuestion.findOne({
-      sessionId: sessionId,
-      questionNumber: questionNumber
-    });
-
-    if (!question) {
-      return NextResponse.json({ error: 'Question not found' }, { status: 404 });
-    }
-
-    // Evaluate answer using Groq AI
-    const evaluation = await evaluateInterviewAnswer({
-      question: question.questionText,
-      answer,
-      expectedKeyPoints: question.expectedKeyPoints || [],
-      category: question.category,
-      difficulty: question.difficulty
-    });
-
-    // Update question with answer and evaluation
     question.userAnswer = answer;
-    question.evaluation = evaluation;
+    if (evaluation) question.evaluation = evaluation;
     question.timeSpent = timeSpent;
     question.answeredAt = new Date();
     await question.save();
 
-    // Update session progress
-    const questionsAnswered = await InterviewQuestion.countDocuments({
-      sessionId: sessionId,
-      userAnswer: { $exists: true, $ne: null }
-    });
+    // Recount from the database rather than incrementing a counter: re-submitting
+    // an answer to the same question must not inflate progress.
+    const answered = await InterviewQuestion.find({
+      sessionId,
+      userAnswer: { $nin: [null, ''] },
+    })
+      .select('evaluation.score')
+      .lean();
 
-    interviewSession.questionsAnswered = questionsAnswered;
+    const scores = answered
+      .map((item) => item.evaluation?.score)
+      .filter((score): score is number => typeof score === 'number');
 
-    // Check if interview is complete
-    const sessionCompleted = questionsAnswered >= interviewSession.totalQuestions;
-    
-    if (sessionCompleted) {
+    interviewSession.questionsAnswered = answered.length;
+    interviewSession.averageScore =
+      scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : undefined;
+
+    const sessionCompleted = answered.length >= interviewSession.totalQuestions;
+
+    if (sessionCompleted && interviewSession.status !== 'completed') {
       interviewSession.status = 'completed';
       interviewSession.completedAt = new Date();
-
-      // Calculate average score
-      const questions = await InterviewQuestion.find({ sessionId: sessionId });
-      const scores = questions
-        .map((q: any) => q.evaluation?.score)
-        .filter((score: any) => score !== undefined);
-      
-      if (scores.length > 0) {
-        interviewSession.averageScore = 
-          scores.reduce((a: number, b: number) => a + b, 0) / scores.length;
-      }
     }
 
     await interviewSession.save();
 
     return NextResponse.json({
       evaluation,
+      evaluationError,
       sessionCompleted,
-      questionsAnswered,
-      totalQuestions: interviewSession.totalQuestions
+      questionsAnswered: answered.length,
+      totalQuestions: interviewSession.totalQuestions,
+      averageScore: interviewSession.averageScore,
     });
-  } catch (error: any) {
-    console.error('Error submitting answer:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to submit answer' },
-      { status: 500 }
-    );
   }
-}
+);

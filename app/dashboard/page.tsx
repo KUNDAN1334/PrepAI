@@ -1,83 +1,88 @@
 // app/dashboard/page.tsx
-import { auth } from '@/lib/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { FileText, Mic, Briefcase, BookOpen, TrendingUp, Target } from 'lucide-react';
+import { redirect } from 'next/navigation';
+import { FileText, Mic, Briefcase, BookOpen, TrendingUp, Target, Search } from 'lucide-react';
+import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
 import InterviewSession from '@/models/InterviewSession';
 import Application from '@/models/Application';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+
+// Always rendered per-request: it shows the signed-in user's live counters.
+export const dynamic = 'force-dynamic';
+
+const QUICK_ACTIONS = [
+  { href: '/dashboard/resume-optimizer', label: 'Optimize resume', icon: FileText },
+  { href: '/dashboard/mock-interview', label: 'Start interview', icon: Mic },
+  { href: '/dashboard/applications/new', label: 'Track application', icon: Briefcase },
+  { href: '/dashboard/company-research', label: 'Research company', icon: Search },
+];
 
 export default async function DashboardPage() {
   const session = await auth();
-  
-  if (!session?.user?.email) {
-    return null;
+
+  // Middleware already redirects anonymous visitors, but a page that renders user
+  // data must never depend on that alone — this is the authoritative check.
+  if (!session?.user?.id) {
+    redirect('/login?callbackUrl=/dashboard');
   }
 
   await connectDB();
 
-  // Fetch user data and stats
-  const user = await User.findOne({ email: session.user.email });
-  
-  // Use try-catch for database queries
-  let interviewCount = 0;
-  let applicationCount = 0;
+  const userId = session.user.id;
 
-  try {
-    if (user?._id) {
-      interviewCount = await InterviewSession.countDocuments({ 
-        userId: user._id,
-        status: 'completed'
-      });
-      
-      applicationCount = await Application.countDocuments({ 
-        userId: user._id 
-      });
-    }
-  } catch (error) {
-    console.error('Error fetching counts:', error);
-  }
+  // Three independent reads, issued together rather than awaited one after another.
+  const [user, completedInterviews, applicationCount, recentSessions] = await Promise.all([
+    User.findById(userId).select('name quota reputation targetRoles').lean(),
+    InterviewSession.countDocuments({ userId, status: 'completed' }),
+    Application.countDocuments({ userId }),
+    InterviewSession.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .select('companyName jobRole status averageScore totalQuestions questionsAnswered')
+      .lean(),
+  ]);
 
-  const quota = user?.quota || {
-    resumeOptimizations: { usedToday: 0, dailyLimit: 5 },
-    mockInterviews: { usedThisMonth: 0, monthlyLimit: 10 }
-  };
+  const resumeQuota = user?.quota?.resumeOptimizations;
+  const interviewQuota = user?.quota?.mockInterviews;
 
   return (
     <div className="space-y-8">
-      {/* Welcome section */}
       <div>
-        <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Welcome back, {user?.name || 'User'}!</h1>
-        <p className="text-ink-muted mt-2">
-          Here's your placement preparation progress
-        </p>
+        <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">
+          Welcome back, {user?.name ?? session.user.name ?? 'there'}
+        </h1>
+        <p className="mt-2 text-ink-muted">Here is where your preparation stands</p>
       </div>
 
-      {/* Stats cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Resume Scans</CardTitle>
+            <CardTitle className="text-sm font-medium">Resume analyses</CardTitle>
             <FileText className="h-4 w-4 text-ink-muted" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {quota.resumeOptimizations?.usedToday || 0}/{quota.resumeOptimizations?.dailyLimit || 5}
+              {resumeQuota?.usedToday ?? 0}/{resumeQuota?.dailyLimit ?? 5}
             </div>
-            <p className="text-xs text-ink-muted mt-1">Daily limit</p>
+            <p className="mt-1 text-xs text-ink-muted">Used today</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Mock Interviews</CardTitle>
+            <CardTitle className="text-sm font-medium">Mock interviews</CardTitle>
             <Mic className="h-4 w-4 text-ink-muted" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{interviewCount}</div>
-            <p className="text-xs text-ink-muted mt-1">Completed this month</p>
+            <div className="text-2xl font-bold">{completedInterviews}</div>
+            <p className="mt-1 text-xs text-ink-muted">
+              Completed · {interviewQuota?.usedThisMonth ?? 0}/{interviewQuota?.monthlyLimit ?? 10}{' '}
+              started this month
+            </p>
           </CardContent>
         </Card>
 
@@ -88,7 +93,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{applicationCount}</div>
-            <p className="text-xs text-ink-muted mt-1">Total tracked</p>
+            <p className="mt-1 text-xs text-ink-muted">Tracked</p>
           </CardContent>
         </Card>
 
@@ -98,72 +103,116 @@ export default async function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-ink-muted" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {user?.reputation?.totalPoints || 0}
-            </div>
-            <p className="text-xs text-ink-muted mt-1">Total points</p>
+            <div className="text-2xl font-bold">{user?.reputation?.totalPoints ?? 0}</div>
+            <p className="mt-1 text-xs text-ink-muted">
+              {user?.reputation?.questionContributions ?? 0} questions shared
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Get started with your preparation</CardDescription>
+          <CardTitle>Quick actions</CardTitle>
+          <CardDescription>Jump straight into the work</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Link href="/dashboard/resume-optimizer">
-              <Button variant="outline" className="w-full justify-start">
-                <FileText className="mr-2 h-4 w-4" />
-                Optimize Resume
-              </Button>
-            </Link>
-            <Link href="/dashboard/mock-interview/setup">
-              <Button variant="outline" className="w-full justify-start">
-                <Mic className="mr-2 h-4 w-4" />
-                Start Interview
-              </Button>
-            </Link>
-            <Link href="/dashboard/applications/new">
-              <Button variant="outline" className="w-full justify-start">
-                <Briefcase className="mr-2 h-4 w-4" />
-                Track Application
-              </Button>
-            </Link>
-            <Link href="/dashboard/question-bank">
-              <Button variant="outline" className="w-full justify-start">
-                <BookOpen className="mr-2 h-4 w-4" />
-                Browse Questions
-              </Button>
-            </Link>
+            {QUICK_ACTIONS.map((action) => (
+              <Link key={action.href} href={action.href}>
+                <Button variant="outline" className="w-full justify-start">
+                  <action.icon className="mr-2 h-4 w-4" />
+                  {action.label}
+                </Button>
+              </Link>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Target companies */}
-      {user?.targetRoles && user.targetRoles.length > 0 && (
+      {recentSessions.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Target Roles</CardTitle>
-            <CardDescription>Roles you're preparing for</CardDescription>
+            <CardTitle>Recent mock interviews</CardTitle>
+            <CardDescription>Pick up where you left off, or review the feedback</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {user.targetRoles.map((role: string, index: number) => (
-                <div
-                  key={index}
-                  className="inline-flex items-center rounded-full border px-3 py-1 text-sm"
-                >
-                  <Target className="mr-2 h-3 w-3" />
-                  {role}
+          <CardContent className="space-y-3">
+            {recentSessions.map((interview) => (
+              <div
+                key={String(interview._id)}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
+              >
+                <div>
+                  <p className="font-semibold">
+                    {interview.companyName} — {interview.jobRole}
+                  </p>
+                  <p className="text-xs text-ink-muted">
+                    {interview.questionsAnswered}/{interview.totalQuestions} answered
+                    {typeof interview.averageScore === 'number'
+                      ? ` · avg ${interview.averageScore.toFixed(1)}/10`
+                      : ''}
+                  </p>
                 </div>
-              ))}
-            </div>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    className={
+                      interview.status === 'completed' ? 'status-positive' : 'status-warning'
+                    }
+                  >
+                    {interview.status}
+                  </Badge>
+                  <Link
+                    href={
+                      interview.status === 'completed'
+                        ? `/dashboard/mock-interview/feedback/${interview._id}`
+                        : `/dashboard/mock-interview/${interview._id}`
+                    }
+                  >
+                    <Button variant="outline" size="sm">
+                      {interview.status === 'completed' ? 'View feedback' : 'Resume'}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}
+
+      {user?.targetRoles && user.targetRoles.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Target roles</CardTitle>
+            <CardDescription>Set these on your profile</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {user.targetRoles.map((role: string) => (
+              <span
+                key={role}
+                className="inline-flex items-center rounded-full border px-3 py-1 text-sm"
+              >
+                <Target className="mr-2 h-3 w-3" />
+                {role}
+              </span>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Question bank</CardTitle>
+          <CardDescription>Contribute a question, earn reputation</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/dashboard/question-bank">
+            <Button variant="outline">
+              <BookOpen className="mr-2 h-4 w-4" />
+              Browse questions
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
     </div>
   );
 }

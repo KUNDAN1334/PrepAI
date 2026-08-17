@@ -1,55 +1,53 @@
+// app/api/mock-interview/[sessionId]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db';
-import mongoose from 'mongoose';
+import InterviewSession from '@/models/InterviewSession';
+import InterviewQuestion from '@/models/InterviewQuestion';
+import { ApiError, requireObjectId, requireUserId, withErrorHandling } from '@/lib/api';
 
-export async function GET(
-  req: NextRequest,
-  context: { params: Promise<{ sessionId: string }> }
-) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export const dynamic = 'force-dynamic';
 
+/** Returns the session plus its questions — deliberately WITHOUT expectedKeyPoints. */
+export const GET = withErrorHandling(
+  'mock-interview:get',
+  async (_req: NextRequest, context: { params: Promise<{ sessionId: string }> }) => {
+    const userId = await requireUserId();
     const { sessionId } = await context.params;
+    requireObjectId(sessionId, 'session id');
 
     await connectDB();
 
-    await import('@/models/InterviewSession');
-    await import('@/models/InterviewQuestion');
+    const interviewSession = await InterviewSession.findOne({ _id: sessionId, userId }).lean();
 
-    const InterviewSession = mongoose.models.InterviewSession;
-    const InterviewQuestion = mongoose.models.InterviewQuestion;
+    if (!interviewSession) throw new ApiError(404, 'Session not found');
 
-    const interviewSession = await InterviewSession.findOne({
-      _id: sessionId,
-      userId: session.user.id,
-    });
-
-    if (!interviewSession) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
-    }
-
-    const questions = await InterviewQuestion.find({
-      sessionId: sessionId,
-    }).sort({ questionNumber: 1 });
+    // `expectedKeyPoints` is the grading rubric. Selecting only the display fields
+    // keeps it out of the JSON the browser can read while the interview is live.
+    const questions = await InterviewQuestion.find({ sessionId })
+      .select('questionNumber questionText category difficulty userAnswer')
+      .sort({ questionNumber: 1 })
+      .lean();
 
     return NextResponse.json({
-      session: interviewSession,
-      questions: questions.map((q: any) => ({
-        questionNumber: q.questionNumber,
-        question: q.questionText,
-        category: q.category,
-        difficulty: q.difficulty,
+      session: {
+        id: interviewSession._id.toString(),
+        companyName: interviewSession.companyName,
+        jobRole: interviewSession.jobRole,
+        interviewType: interviewSession.interviewType,
+        difficulty: interviewSession.difficulty,
+        status: interviewSession.status,
+        totalQuestions: interviewSession.totalQuestions,
+        questionsAnswered: interviewSession.questionsAnswered,
+      },
+      questions: questions.map((question) => ({
+        questionNumber: question.questionNumber,
+        question: question.questionText,
+        category: question.category,
+        difficulty: question.difficulty,
+        // Lets the client resume a half-finished interview instead of restarting.
+        answered: Boolean(question.userAnswer),
+        userAnswer: question.userAnswer ?? '',
       })),
     });
-  } catch (error) {
-    console.error('Error fetching session:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch session' },
-      { status: 500 }
-    );
   }
-}
+);

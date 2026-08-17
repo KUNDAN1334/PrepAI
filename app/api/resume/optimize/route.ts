@@ -1,85 +1,76 @@
 // app/api/resume/optimize/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { optimizeResume } from '@/lib/groq';
-import { parsePDF, parseDOCX } from '@/lib/pdf-parser';
 import connectDB from '@/lib/db';
-import mongoose from 'mongoose';
+import Resume from '@/models/Resume';
+import { optimizeResume } from '@/lib/groq';
+import { MAX_RESUME_BYTES, parseResume } from '@/lib/resume-parser';
+import { ApiError, requireUserId, withErrorHandling } from '@/lib/api';
+import { checkQuota, incrementQuota, quotaExceededResponse } from '@/lib/quota';
 
-export async function POST(req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
-    const formData = await req.formData();
-    const file = formData.get('resume') as File;
-    const jobDescription = formData.get('jobDescription') as string;
+const MIN_JD_LENGTH = 50;
 
-    if (!file || !jobDescription) {
-      return NextResponse.json(
-        { error: 'Resume file and job description are required' },
-        { status: 400 }
-      );
-    }
+export const POST = withErrorHandling('resume:optimize', async (req: NextRequest) => {
+  const userId = await requireUserId();
 
-    // Check file type
-    if (file.type === 'application/pdf') {
-      return NextResponse.json(
-        { error: 'PDF files are not supported. Please convert your resume to DOCX format and try again.' },
-        { status: 400 }
-      );
-    }
+  // multipart/form-data, not JSON: the resume is a binary upload, so this route
+  // reads the body with formData() instead of going through parseBody().
+  const formData = await req.formData();
+  const file = formData.get('resume');
+  const jobDescription = String(formData.get('jobDescription') ?? '').trim();
 
-    if (!file.type.includes('wordprocessingml') && !file.name.endsWith('.docx')) {
-      return NextResponse.json(
-        { error: 'Only DOCX files are supported' },
-        { status: 400 }
-      );
-    }
-
-    // Parse resume
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    let resumeText: string;
-    try {
-      resumeText = await parseDOCX(buffer);
-    } catch (error: any) {
-      return NextResponse.json(
-        { error: error.message || 'Failed to parse resume file' },
-        { status: 400 }
-      );
-    }
-
-    // Optimize resume
-    const analysis = await optimizeResume(resumeText, jobDescription);
-
-    // Save to database
-    await connectDB();
-
-    // Import model
-    await import('@/models/Resume');
-    const Resume = mongoose.models.Resume;
-
-    const resume = await Resume.create({
-      userId: session.user.id,
-      originalFileName: file.name,
-      originalText: resumeText,
-      jobDescription,
-      analysis,
-    });
-
-    return NextResponse.json({
-      resumeId: resume._id,
-      analysis,
-    });
-  } catch (error: any) {
-    console.error('Error optimizing resume:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to optimize resume' },
-      { status: 500 }
-    );
+  if (!(file instanceof File)) {
+    throw new ApiError(400, 'Please attach a resume file');
   }
-}
+
+  if (jobDescription.length < MIN_JD_LENGTH) {
+    throw new ApiError(400, `Please paste a job description (at least ${MIN_JD_LENGTH} characters)`);
+  }
+
+  if (file.size === 0) throw new ApiError(400, 'The uploaded file is empty');
+
+  // Size is re-checked server-side; the client limit is a convenience, not a control.
+  if (file.size > MAX_RESUME_BYTES) {
+    throw new ApiError(413, 'Resume is larger than 5 MB');
+  }
+
+  await connectDB();
+
+  // Quota is checked before the expensive work (parse + LLM call), not after.
+  const quota = await checkQuota(userId, 'resumeOptimizations');
+
+  if (!quota.allowed) {
+    return NextResponse.json(quotaExceededResponse('resumeOptimizations', quota), { status: 429 });
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  let resumeText: string;
+  try {
+    ({ text: resumeText } = await parseResume(buffer, file.name, file.type));
+  } catch (error) {
+    // Parse failures are the user's file, not a server fault -> 400, not 500.
+    throw new ApiError(400, error instanceof Error ? error.message : 'Could not read that file');
+  }
+
+  const analysis = await optimizeResume(resumeText, jobDescription);
+
+  const resume = await Resume.create({
+    userId,
+    originalFileName: file.name,
+    originalText: resumeText,
+    jobDescription,
+    analysis,
+  });
+
+  await incrementQuota(userId, 'resumeOptimizations');
+
+  return NextResponse.json({
+    resumeId: resume._id.toString(),
+    fileName: file.name,
+    analysis,
+    quota: { remaining: Math.max(0, quota.remaining - 1), limit: quota.limit },
+  });
+});

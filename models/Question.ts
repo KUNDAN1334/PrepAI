@@ -61,5 +61,8 @@ const QuestionSchema = new Schema<IQuestion>({
 // Text index for search
 QuestionSchema.index({ questionText: 'text', companyName: 'text', jobRole: 'text' });
 
-export default mongoose.models.Question || 
+const Question =
+  (mongoose.models.Question as mongoose.Model<IQuestion>) ||
   mongoose.model<IQuestion>('Question', QuestionSchema);
+
+export default Question;

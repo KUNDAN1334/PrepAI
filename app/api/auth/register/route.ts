@@ -1,61 +1,42 @@
 // app/api/auth/register/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
+import { ApiError, parseBody, withErrorHandling } from '@/lib/api';
 
-export async function POST(req: NextRequest) {
-  try {
-    const { name, email, password } = await req.json();
+export const dynamic = 'force-dynamic';
 
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
+const registerSchema = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(80),
+  email: z.email('Enter a valid email address').transform((value) => value.toLowerCase().trim()),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+});
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
-        { status: 400 }
-      );
-    }
+export const POST = withErrorHandling('auth:register', async (req: NextRequest) => {
+  const { name, email, password } = await parseBody(req, registerSchema);
 
-    await connectDB();
+  await connectDB();
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'User already exists with this email' },
-        { status: 400 }
-      );
-    }
+  const existingUser = await User.findOne({ email });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await User.create({
-      name,
-      email: email.toLowerCase(),
-      password: hashedPassword,
-    });
-
-    return NextResponse.json(
-      {
-        message: 'User created successfully',
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-        },
-      },
-      { status: 201 }
-    );
-  } catch (error: any) {
-    console.error('Registration error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to create user' },
-      { status: 500 }
-    );
+  if (existingUser) {
+    throw new ApiError(409, 'An account with this email already exists');
   }
-}
+
+  // Cost factor 12: ~250 ms per hash on typical hardware — slow enough to make
+  // offline cracking expensive, fast enough for an interactive signup.
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  const user = await User.create({ name, email, password: hashedPassword });
+
+  // The password hash is never echoed back, not even to the account owner.
+  return NextResponse.json(
+    {
+      message: 'Account created successfully',
+      user: { id: user._id.toString(), name: user.name, email: user.email },
+    },
+    { status: 201 }
+  );
+});

@@ -1,145 +1,253 @@
+// app/dashboard/question-bank/add/page.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { QUESTION_DIFFICULTIES, QUESTION_TYPES } from '@/lib/validation';
 
-export default function QuestionBankAddPage() {
+const TYPE_LABELS: Record<string, string> = {
+  technical: 'Technical',
+  coding: 'Coding',
+  hr: 'HR',
+  behavioral: 'Behavioral',
+  'system-design': 'System design',
+};
+
+export default function AddQuestionPage() {
   const router = useRouter();
-
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({
     companyName: '',
     jobRole: '',
-    difficulty: 'medium',
     interviewRound: '',
-    questionType: '',
+    difficulty: 'medium',
+    questionType: 'technical',
     questionText: '',
     contributorAnswer: '',
+    tags: '',
+    isAnonymous: false,
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const setField = (key: keyof typeof form, value: string | boolean) =>
+    setForm((current) => ({ ...current, [key]: value }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    const res = await fetch('/api/questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    });
-    if (res.ok) {
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsSaving(true);
+
+    try {
+      const response = await fetch('/api/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          // Empty tags are intentional: the API asks the model for tags only when
+          // the contributor leaves this blank.
+          tags: form.tags
+            .split(',')
+            .map((tag) => tag.trim().toLowerCase())
+            .filter(Boolean),
+        }),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        const detail = payload.details ? Object.values(payload.details)[0] : null;
+        throw new Error((detail as string) || payload.error || 'Failed to add question');
+      }
+
+      toast({ title: 'Question added', description: '+5 reputation points' });
       router.push('/dashboard/question-bank');
-    } else {
-      setError('Failed to add question. Please try again.');
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to add question',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4">
-      <h1 className="text-2xl font-bold text-ink mb-6">Add Interview Question</h1>
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 bg-white border-2 border-ink rounded-[14px] p-8 shadow-[4px_4px_0_var(--ink)]"
-      >
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="flex items-center gap-4">
+        <Link href="/dashboard/question-bank">
+          <Button variant="ghost" size="icon" aria-label="Back to question bank">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </Link>
         <div>
-          <label className="block mb-1 text-ink-muted font-medium">Company</label>
-          <input
-            name="companyName"
-            value={form.companyName}
-            onChange={handleChange}
-            placeholder="e.g., Google"
-            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none"
-            required
-          />
+          <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Add a question</h1>
+          <p className="mt-1 text-ink-muted">Share a question you were actually asked</p>
         </div>
-        <div>
-          <label className="block mb-1 text-ink-muted font-medium">Role / Position</label>
-          <input
-            name="jobRole"
-            value={form.jobRole}
-            onChange={handleChange}
-            placeholder="e.g., Software Engineer"
-            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none"
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1 text-ink-muted font-medium">Difficulty</label>
-          <select
-            name="difficulty"
-            value={form.difficulty}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none"
-          >
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-        </div>
-        <div>
-          <label className="block mb-1 text-ink-muted font-medium">Interview Round</label>
-          <input
-            name="interviewRound"
-            value={form.interviewRound}
-            onChange={handleChange}
-            placeholder="e.g., Technical Round 1"
-            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none"
-          />
-        </div>
-        {/* Question Type field */}
-        <div>
-          <label className="block mb-1 text-ink-muted font-medium">Question Type</label>
-          <select
-            name="questionType"
-            value={form.questionType}
-            onChange={handleChange}
-            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none"
-            required
-          >
-            <option value="">Select Type</option>
-            <option value="technical">Technical</option>
-            <option value="coding">Coding</option>
-            <option value="hr">HR</option>
-            <option value="behavioral">Behavioral</option>
-          </select>
-        </div>
-        <div>
-          <label className="block mb-1 text-ink-muted font-medium">Question</label>
-          <textarea
-            name="questionText"
-            value={form.questionText}
-            onChange={handleChange}
-            rows={4}
-            placeholder="Enter the exact interview question..."
-            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none resize-vertical"
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1 text-ink-muted font-medium">
-            Your Answer / Approach <span className="text-ink-soft">(optional)</span>
-          </label>
-          <textarea
-            name="contributorAnswer"
-            value={form.contributorAnswer}
-            onChange={handleChange}
-            rows={3}
-            placeholder="How did you answer, or your suggested approach"
-            className="w-full p-2 rounded bg-white text-ink border-[1.5px] border-ink outline-none resize-vertical"
-          />
-        </div>
-        <Button type="submit" disabled={loading} className="w-full">
-          {loading ? 'Submitting...' : 'Submit Question'}
-        </Button>
-        {error && <div className="text-crimson mt-4 text-center">{error}</div>}
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Question details</CardTitle>
+            <CardDescription>Fields marked * are required</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="companyName">Company *</Label>
+                <Input
+                  id="companyName"
+                  placeholder="e.g., Google"
+                  value={form.companyName}
+                  onChange={(event) => setField('companyName', event.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="jobRole">Role *</Label>
+                <Input
+                  id="jobRole"
+                  placeholder="e.g., Software Engineer"
+                  value={form.jobRole}
+                  onChange={(event) => setField('jobRole', event.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="interviewRound">Round *</Label>
+                <Input
+                  id="interviewRound"
+                  placeholder="e.g., Technical 1"
+                  value={form.interviewRound}
+                  onChange={(event) => setField('interviewRound', event.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="questionType">Type *</Label>
+                <Select
+                  value={form.questionType}
+                  onValueChange={(value) => setField('questionType', value)}
+                >
+                  <SelectTrigger id="questionType">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {QUESTION_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {TYPE_LABELS[type]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="difficulty">Difficulty *</Label>
+                <Select
+                  value={form.difficulty}
+                  onValueChange={(value) => setField('difficulty', value)}
+                >
+                  <SelectTrigger id="difficulty">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {QUESTION_DIFFICULTIES.map((level) => (
+                      <SelectItem key={level} value={level}>
+                        {level[0].toUpperCase() + level.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="questionText">Question *</Label>
+              <Textarea
+                id="questionText"
+                placeholder="Write the question exactly as it was asked..."
+                value={form.questionText}
+                onChange={(event) => setField('questionText', event.target.value)}
+                className="min-h-[120px]"
+                required
+                minLength={10}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contributorAnswer">Your answer or approach</Label>
+              <Textarea
+                id="contributorAnswer"
+                placeholder="How you answered, or how you would answer now"
+                value={form.contributorAnswer}
+                onChange={(event) => setField('contributorAnswer', event.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags</Label>
+              <Input
+                id="tags"
+                placeholder="arrays, dynamic-programming (comma separated)"
+                value={form.tags}
+                onChange={(event) => setField('tags', event.target.value)}
+              />
+              <p className="text-xs text-ink-soft">Leave blank and AI will suggest tags for you.</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="isAnonymous"
+                checked={form.isAnonymous}
+                onCheckedChange={(checked) => setField('isAnonymous', checked === true)}
+              />
+              <Label htmlFor="isAnonymous" className="font-normal">
+                Post anonymously (your name stays hidden)
+              </Label>
+            </div>
+
+            <div className="flex gap-4 pt-2">
+              <Link href="/dashboard/question-bank" className="flex-1">
+                <Button type="button" variant="outline" className="w-full" disabled={isSaving}>
+                  Cancel
+                </Button>
+              </Link>
+              <Button type="submit" className="flex-1" disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit question'
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </form>
     </div>
   );

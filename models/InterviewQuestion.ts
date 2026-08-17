@@ -43,11 +43,8 @@ const InterviewQuestionSchema = new Schema<IInterviewQuestion>({
   timestamps: true
 });
 
-// Clear any existing model before creating new one
-if (mongoose.models.InterviewQuestion) {
-  delete mongoose.models.InterviewQuestion;
-}
-
-const InterviewQuestion = mongoose.model<IInterviewQuestion>('InterviewQuestion', InterviewQuestionSchema);
+const InterviewQuestion =
+  (mongoose.models.InterviewQuestion as mongoose.Model<IInterviewQuestion>) ||
+  mongoose.model<IInterviewQuestion>('InterviewQuestion', InterviewQuestionSchema);
 
 export default InterviewQuestion;

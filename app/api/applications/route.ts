@@ -1,53 +1,38 @@
 // app/api/applications/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db';
 import Application from '@/models/Application';
+import { parseBody, requireUserId, withErrorHandling } from '@/lib/api';
+import { applicationCreateSchema } from '@/lib/validation';
 
-export async function GET(req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export const dynamic = 'force-dynamic';
 
-    await connectDB();
+export const GET = withErrorHandling('applications:GET', async () => {
+  const userId = await requireUserId();
+  await connectDB();
 
-    const applications = await Application.find({
-      userId: session.user.id,
-    }).sort({ applicationDate: -1 });
+  // `.lean()` returns plain objects instead of hydrated Mongoose documents:
+  // this is a read-only list, so skipping document hydration is measurably cheaper.
+  const applications = await Application.find({ userId }).sort({ applicationDate: -1 }).lean();
 
-    return NextResponse.json(applications);
-  } catch (error) {
-    console.error('Error fetching applications:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch applications' },
-      { status: 500 }
-    );
-  }
-}
+  return NextResponse.json(applications);
+});
 
-export async function POST(req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export const POST = withErrorHandling('applications:POST', async (req: NextRequest) => {
+  const userId = await requireUserId();
+  const data = await parseBody(req, applicationCreateSchema);
 
-    const body = await req.json();
-    await connectDB();
+  await connectDB();
 
-    const application = await Application.create({
-      userId: session.user.id,
-      ...body,
-    });
+  // userId comes from the session and is written last, so a client cannot smuggle
+  // `userId` in the body and create rows owned by another account.
+  const application = await Application.create({
+    ...data,
+    applicationDate: data.applicationDate ?? new Date(),
+    source: data.source ?? 'Manual',
+    userId,
+    statusHistory: [{ status: data.status, changedAt: new Date() }],
+  });
 
-    return NextResponse.json(application, { status: 201 });
-  } catch (error: any) {
-    console.error('Error creating application:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to create application' },
-      { status: 500 }
-    );
-  }
-}
+  return NextResponse.json(application, { status: 201 });
+});

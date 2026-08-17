@@ -1,69 +1,42 @@
 // app/api/user/profile/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
+import { ApiError, parseBody, requireUserId, withErrorHandling } from '@/lib/api';
+import { profileUpdateSchema } from '@/lib/validation';
 
-export async function GET(req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export const dynamic = 'force-dynamic';
 
-    await connectDB();
-    const user = await User.findById(session.user.id).select('-password');
+export const GET = withErrorHandling('user:profile:GET', async () => {
+  const userId = await requireUserId();
+  await connectDB();
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+  // Explicit projection: the password hash must never leave the database layer,
+  // even by accident when new fields are added to the schema later.
+  const user = await User.findById(userId).select('-password').lean();
 
-    return NextResponse.json(user);
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch profile' },
-      { status: 500 }
-    );
-  }
-}
+  if (!user) throw new ApiError(404, 'User not found');
 
-export async function PUT(req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  return NextResponse.json(user);
+});
 
-    const updates = await req.json();
-    await connectDB();
+export const PUT = withErrorHandling('user:profile:PUT', async (req: NextRequest) => {
+  const userId = await requireUserId();
+  const updates = await parseBody(req, profileUpdateSchema);
 
-    const user = await User.findByIdAndUpdate(
-      session.user.id,
-      {
-        $set: {
-          name: updates.name,
-          phone: updates.phone,
-          location: updates.location,
-          bio: updates.bio,
-          experienceLevel: updates.experienceLevel,
-          targetRoles: updates.targetRoles,
-          socialLinks: updates.socialLinks,
-        },
-      },
-      { new: true }
-    ).select('-password');
+  await connectDB();
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+  // $set with a validated, whitelisted object: `email`, `password`, `quota` and
+  // `reputation` are not in the schema, so they cannot be written from the client.
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $set: updates },
+    { new: true, runValidators: true }
+  )
+    .select('-password')
+    .lean();
 
-    return NextResponse.json(user);
-  } catch (error) {
-    console.error('Error updating user profile:', error);
-    return NextResponse.json(
-      { error: 'Failed to update profile' },
-      { status: 500 }
-    );
-  }
-}
+  if (!user) throw new ApiError(404, 'User not found');
+
+  return NextResponse.json(user);
+});

@@ -7,16 +7,35 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Search, Loader2, Sparkles, BookOpen } from 'lucide-react';
+import { Loader2, Sparkles, BookOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
+
+/** Keys returned by the Python research service, in display order. */
+const SOURCE_LABELS: Array<[string, string]> = [
+  ['gfg_articles', 'GFG articles'],
+  ['leetcode_topics', 'LeetCode topics'],
+  ['medium_articles', 'Medium articles'],
+  ['reddit_posts', 'Reddit posts'],
+];
 
 export default function CompanyResearchPage() {
   const { toast } = useToast();
   const [companyName, setCompanyName] = useState('');
   const [userQuery, setUserQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [research, setResearch] = useState<any>(null);
+  interface ResearchResult {
+    company?: string;
+    cached?: boolean;
+    degraded?: boolean;
+    ai_insights?: {
+      summary?: string;
+      error?: string;
+      sources_analyzed?: Record<string, number | undefined>;
+    };
+  }
+
+  const [research, setResearch] = useState<ResearchResult | null>(null);
 
   const handleResearch = async () => {
     if (!companyName.trim()) {
@@ -36,21 +55,24 @@ export default function CompanyResearchPage() {
         `/api/research/company?company=${encodeURIComponent(companyName)}&query=${encodeURIComponent(userQuery)}`
       );
 
+      const result = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to fetch research');
+        throw new Error(result.error || 'Failed to fetch research');
       }
 
-      const result = await response.json();
       setResearch(result);
 
       toast({
-        title: 'Research Complete!',
-        description: `Analyzed ${result.ai_insights?.sources_analyzed?.total || 0} sources`,
+        title: result.cached ? 'Loaded from cache' : 'Research complete',
+        description: result.degraded
+          ? 'The research service is offline — showing direct sources instead.'
+          : `Analysed ${result.ai_insights?.sources_analyzed?.total || 0} sources`,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Something went wrong',
         variant: 'destructive',
       });
     } finally {
@@ -131,31 +153,18 @@ export default function CompanyResearchPage() {
               AI Insights for {research.company}
             </CardTitle>
             <CardDescription className="flex flex-wrap items-center gap-2">
-              <span>Analyzed {research.ai_insights?.sources_analyzed?.total || 0} sources:</span>
-              {research.ai_insights?.sources_analyzed && (
-                <>
-                  {research.ai_insights.sources_analyzed.gfg_articles > 0 && (
-                    <Badge variant="outline">
-                      {research.ai_insights.sources_analyzed.gfg_articles} GFG articles
-                    </Badge>
-                  )}
-                  {research.ai_insights.sources_analyzed.leetcode_topics > 0 && (
-                    <Badge variant="outline">
-                      {research.ai_insights.sources_analyzed.leetcode_topics} LeetCode topics
-                    </Badge>
-                  )}
-                  {research.ai_insights.sources_analyzed.medium_articles > 0 && (
-                    <Badge variant="outline">
-                      {research.ai_insights.sources_analyzed.medium_articles} Medium articles
-                    </Badge>
-                  )}
-                  {research.ai_insights.sources_analyzed.reddit_posts > 0 && (
-                    <Badge variant="outline">
-                      {research.ai_insights.sources_analyzed.reddit_posts} Reddit posts
-                    </Badge>
-                  )}
-                </>
-              )}
+              <span>
+                Analysed {research.ai_insights?.sources_analyzed?.total ?? 0} sources
+                {research.cached ? ' (cached)' : ''}:
+              </span>
+              {SOURCE_LABELS.map(([key, label]) => {
+                const count = research.ai_insights?.sources_analyzed?.[key] ?? 0;
+                return count > 0 ? (
+                  <Badge key={key} variant="outline">
+                    {count} {label}
+                  </Badge>
+                ) : null;
+              })}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -168,25 +177,25 @@ export default function CompanyResearchPage() {
               <div className="prose prose-sm max-w-none">
                 <ReactMarkdown
                   components={{
-                    h2: ({node, ...props}) => (
+                    h2: ({ ...props }) => (
                       <h2 className="mt-6 mb-3 text-xl font-bold border-b pb-2 text-ink" {...props} />
                     ),
-                    h3: ({node, ...props}) => (
+                    h3: ({ ...props }) => (
                       <h3 className="mt-4 mb-2 text-lg font-semibold text-ink" {...props} />
                     ),
-                    ul: ({node, ...props}) => (
+                    ul: ({ ...props }) => (
                       <ul className="list-disc pl-6 space-y-1" {...props} />
                     ),
-                    ol: ({node, ...props}) => (
+                    ol: ({ ...props }) => (
                       <ol className="list-decimal pl-6 space-y-1" {...props} />
                     ),
-                    p: ({node, ...props}) => (
+                    p: ({ ...props }) => (
                       <p className="mb-3 leading-relaxed" {...props} />
                     ),
-                    strong: ({node, ...props}) => (
+                    strong: ({ ...props }) => (
                       <strong className="font-bold text-ink" {...props} />
                     ),
-                    a: ({node, ...props}) => (
+                    a: ({ ...props }) => (
                       <a className="font-bold text-ink underline" {...props} />
                     ),
                   }}

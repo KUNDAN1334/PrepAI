@@ -1,84 +1,120 @@
 // app/dashboard/mock-interview/feedback/[sessionId]/page.tsx
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { use, useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Loader2, Home, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Home, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 
-export default function FeedbackPage({
-  params,
-}: {
-  params: Promise<{ sessionId: string }>; // Mark as Promise
-}) {
-  const { sessionId } = use(params); // Unwrap with React.use()
-  const router = useRouter();
-  const [feedback, setFeedback] = useState<any>(null);
+interface Evaluation {
+  score: number;
+  strengths: string[];
+  improvements: string[];
+  missedKeyPoints: string[];
+  overallFeedback: string;
+  exampleAnswer: string;
+}
+
+interface FeedbackQuestion {
+  questionNumber: number;
+  question: string;
+  category: string;
+  difficulty: string;
+  expectedKeyPoints: string[];
+  userAnswer: string | null;
+  evaluation: Evaluation | null;
+  timeSpent: number | null;
+}
+
+interface Feedback {
+  companyName: string;
+  jobRole: string;
+  interviewType: string;
+  difficulty: string;
+  status: string;
+  totalQuestions: number;
+  questionsAnswered: number;
+  averageScore: number | null;
+  questions: FeedbackQuestion[];
+}
+
+function List({ title, items, className }: { title: string; items: string[]; className: string }) {
+  if (!items?.length) return null;
+
+  return (
+    <div>
+      <h4 className={`mb-2 font-semibold ${className}`}>{title}</h4>
+      <ul className="list-inside list-disc space-y-1">
+        {items.map((item, i) => (
+          <li key={i} className="text-sm">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default function FeedbackPage({ params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = use(params);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchFeedback();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchFeedback = async () => {
+  const load = useCallback(async () => {
     try {
-      console.log('Fetching feedback for session:', sessionId);
-      
       const response = await fetch(`/api/mock-interview/${sessionId}/feedback`);
-      
-      console.log('Feedback response status:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Feedback error:', errorData);
-        throw new Error(errorData.error || 'Failed to load feedback');
-      }
-      
-      const data = await response.json();
-      console.log('Feedback data:', data);
-      
-      setFeedback(data);
-    } catch (error: any) {
-      console.error('Error fetching feedback:', error);
-      // Don't show error toast, just show empty state
+      const payload = await response.json();
+
+      if (!response.ok) throw new Error(payload.error || 'Could not load feedback');
+
+      setFeedback(payload);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Could not load feedback');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [sessionId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
+          <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin" />
           <p className="text-ink-muted">Loading feedback...</p>
         </div>
       </div>
     );
   }
 
-  if (!feedback) {
+  if (error || !feedback) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <p className="text-ink-muted mb-4">Feedback not available</p>
-          <Link href="/dashboard/mock-interview/setup">
-            <Button>Start New Interview</Button>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="space-y-4 text-center">
+          <p className="text-ink-muted">{error ?? 'Feedback is not available for this session.'}</p>
+          <Link href="/dashboard/mock-interview">
+            <Button>Start a new interview</Button>
           </Link>
         </div>
       </div>
     );
   }
 
+  const completion = feedback.totalQuestions
+    ? (feedback.questionsAnswered / feedback.totalQuestions) * 100
+    : 0;
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Interview Feedback</h1>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Interview feedback</h1>
         <Link href="/dashboard">
           <Button variant="outline">
             <Home className="mr-2 h-4 w-4" />
@@ -87,169 +123,164 @@ export default function FeedbackPage({
         </Link>
       </div>
 
-      {/* Overall Score */}
       <Card>
         <CardHeader>
-          <CardTitle>Overall Performance</CardTitle>
+          <CardTitle>Overall performance</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <div className="text-6xl font-bold mb-2">
-              {feedback.averageScore ? feedback.averageScore.toFixed(1) : 'N/A'}
+          <div className="py-8 text-center">
+            <div className="mb-2 text-6xl font-bold">
+              {typeof feedback.averageScore === 'number' ? feedback.averageScore.toFixed(1) : 'N/A'}
               <span className="text-2xl text-ink-soft">/10</span>
             </div>
             <p className="text-ink-muted">
-              Completed {feedback.questionsAnswered} of {feedback.totalQuestions} questions
+              {feedback.questionsAnswered} of {feedback.totalQuestions} questions answered
             </p>
-            <div className="mt-4 max-w-md mx-auto">
-              <Progress 
-                value={(feedback.questionsAnswered / feedback.totalQuestions) * 100} 
-                className="h-2"
-              />
+            <div className="mx-auto mt-4 max-w-md">
+              <Progress value={completion} className="h-2" />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Session Info */}
       <Card>
         <CardHeader>
-          <CardTitle>Interview Details</CardTitle>
+          <CardTitle>Interview details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex justify-between">
-            <span className="text-ink-muted">Company:</span>
+            <span className="text-ink-muted">Company</span>
             <span className="font-medium">{feedback.companyName}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-ink-muted">Role:</span>
+            <span className="text-ink-muted">Role</span>
             <span className="font-medium">{feedback.jobRole}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-ink-muted">Type:</span>
+            <span className="text-ink-muted">Type</span>
             <span className="font-medium">{feedback.interviewType}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-ink-muted">Difficulty:</span>
+            <span className="text-ink-muted">Difficulty</span>
             <Badge>{feedback.difficulty}</Badge>
           </div>
           <div className="flex justify-between">
-            <span className="text-ink-muted">Status:</span>
-            <Badge variant={feedback.status === 'completed' ? 'default' : 'secondary'}>
+            <span className="text-ink-muted">Status</span>
+            <Badge className={feedback.status === 'completed' ? 'status-positive' : 'status-warning'}>
               {feedback.status}
             </Badge>
           </div>
         </CardContent>
       </Card>
 
-      {/* Individual Question Feedback */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Question by Question Feedback</h2>
-        
-        {feedback.questions && feedback.questions.length > 0 ? (
-          feedback.questions.map((q: any, index: number) => (
-            <Card key={index}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="outline">Question {q.questionNumber}</Badge>
-                      <Badge>{q.category}</Badge>
-                      <Badge variant="secondary">{q.difficulty}</Badge>
-                    </div>
-                    <CardTitle className="text-lg">{q.question}</CardTitle>
+        <h2 className="text-2xl font-bold">Question by question</h2>
+
+        {feedback.questions.map((question) => (
+          <Card key={question.questionNumber}>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">Q{question.questionNumber}</Badge>
+                    <Badge>{question.category}</Badge>
+                    <Badge variant="secondary">{question.difficulty}</Badge>
                   </div>
-                  <div className="text-right ml-4">
-                    <div className="text-3xl font-bold">
-                      {q.evaluation?.score || 'N/A'}
-                      <span className="text-sm text-ink-soft">/10</span>
-                    </div>
+                  <CardTitle className="text-lg">{question.question}</CardTitle>
+                </div>
+                <div className="ml-4 text-right">
+                  <div className="text-3xl font-bold">
+                    {question.evaluation?.score ?? '—'}
+                    <span className="text-sm text-ink-soft">/10</span>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {q.evaluation ? (
-                  <>
-                    {q.evaluation.strengths && q.evaluation.strengths.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold text-azure mb-2">✓ Strengths</h4>
-                        <ul className="list-disc list-inside space-y-1">
-                          {q.evaluation.strengths.map((s: string, i: number) => (
-                            <li key={i} className="text-sm">{s}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {question.userAnswer ? (
+                <details className="rounded-lg bg-paper p-4">
+                  <summary className="cursor-pointer text-sm font-semibold">Your answer</summary>
+                  <p className="mt-2 whitespace-pre-wrap text-sm">{question.userAnswer}</p>
+                </details>
+              ) : (
+                <p className="text-sm text-ink-soft">You did not answer this question.</p>
+              )}
 
-                    {q.evaluation.improvements && q.evaluation.improvements.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold text-gold-ink mb-2">→ Areas for Improvement</h4>
-                        <ul className="list-disc list-inside space-y-1">
-                          {q.evaluation.improvements.map((i: string, idx: number) => (
-                            <li key={idx} className="text-sm">{i}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+              {question.evaluation ? (
+                <>
+                  <List
+                    title="✓ Strengths"
+                    items={question.evaluation.strengths}
+                    className="text-azure"
+                  />
+                  <List
+                    title="→ Areas to improve"
+                    items={question.evaluation.improvements}
+                    className="text-gold-ink"
+                  />
+                  <List
+                    title="✗ Missed key points"
+                    items={question.evaluation.missedKeyPoints}
+                    className="text-crimson"
+                  />
 
-                    {q.evaluation.missedKeyPoints && q.evaluation.missedKeyPoints.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold text-crimson mb-2">✗ Missed Key Points</h4>
-                        <ul className="list-disc list-inside space-y-1">
-                          {q.evaluation.missedKeyPoints.map((p: string, i: number) => (
-                            <li key={i} className="text-sm">{p}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  {question.evaluation.overallFeedback && (
+                    <div className="rounded-lg bg-paper p-4">
+                      <h4 className="mb-2 font-semibold">Overall feedback</h4>
+                      <p className="text-sm">{question.evaluation.overallFeedback}</p>
+                    </div>
+                  )}
 
-                    {q.evaluation.overallFeedback && (
-                      <div className="bg-paper p-4 rounded-lg">
-                        <h4 className="font-semibold mb-2">Overall Feedback</h4>
-                        <p className="text-sm">{q.evaluation.overallFeedback}</p>
-                      </div>
-                    )}
+                  {question.evaluation.exampleAnswer && (
+                    <div className="status-info rounded-lg border p-4">
+                      <h4 className="mb-2 font-semibold text-ink">Example answer</h4>
+                      <p className="text-sm">{question.evaluation.exampleAnswer}</p>
+                    </div>
+                  )}
 
-                    {q.evaluation.exampleAnswer && (
-                      <div className="status-info rounded-lg border p-4">
-                        <h4 className="font-semibold mb-2 text-ink">Example Answer</h4>
-                        <p className="text-sm">{q.evaluation.exampleAnswer}</p>
-                      </div>
-                    )}
+                  {typeof question.timeSpent === 'number' && (
+                    <p className="text-xs text-ink-soft">
+                      Time spent: {Math.floor(question.timeSpent / 60)}m {question.timeSpent % 60}s
+                    </p>
+                  )}
+                </>
+              ) : (
+                question.userAnswer && (
+                  // Answers saved while grading was unavailable still show the rubric,
+                  // so the session is never a dead end.
+                  <div className="status-warning rounded-lg border p-4">
+                    <h4 className="mb-2 font-semibold text-ink">Not graded</h4>
+                    <p className="text-sm">
+                      AI grading was unavailable for this answer. Compare it against the expected
+                      points below.
+                    </p>
+                  </div>
+                )
+              )}
 
-                    {q.timeSpent && (
-                      <div className="text-xs text-ink-soft">
-                        Time spent: {Math.floor(q.timeSpent / 60)}m {q.timeSpent % 60}s
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-ink-soft text-sm">No evaluation available for this question</div>
-                )}
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-ink-soft">No question feedback available</p>
+              {question.expectedKeyPoints.length > 0 && (
+                <List
+                  title="Expected key points"
+                  items={question.expectedKeyPoints}
+                  className="text-ink"
+                />
+              )}
             </CardContent>
           </Card>
-        )}
+        ))}
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-4">
-        <Link href="/dashboard/mock-interview/setup" className="flex-1">
+      <div className="flex flex-wrap gap-4">
+        <Link href="/dashboard/mock-interview" className="flex-1">
           <Button variant="outline" className="w-full">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Start New Interview
+            <RotateCcw className="mr-2 h-4 w-4" />
+            New interview
           </Button>
         </Link>
         <Link href="/dashboard" className="flex-1">
           <Button className="w-full">
             <Home className="mr-2 h-4 w-4" />
-            Back to Dashboard
+            Dashboard
           </Button>
         </Link>
       </div>

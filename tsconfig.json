@@ -30,12 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "PrepAI",
-    "Threaded_v0",
-    "Authentication_API",
-    "services"
-  ]
+  "exclude": ["node_modules", ".next", "services"]
 }

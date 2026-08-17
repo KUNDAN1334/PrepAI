@@ -1,6 +1,9 @@
+// app/dashboard/question-bank/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Search, Plus, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,126 +14,169 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, Filter } from 'lucide-react';
-import Link from 'next/link';
+import QuestionCard, { type QuestionDTO } from '@/components/questions/QuestionCard';
 
 export default function QuestionBankPage() {
-  const [questions, setQuestions] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState({
-    difficulty: 'all',
-    company: '',
-    role: '',
-  });
+  const [questions, setQuestions] = useState<QuestionDTO[]>([]);
+  const [search, setSearch] = useState('');
+  const [company, setCompany] = useState('');
+  const [difficulty, setDifficulty] = useState('all');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Debounced inputs: typing "software engineer" fired one request per keystroke
+  // before. These lag the raw input by 350 ms and are what the fetch depends on.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [debouncedCompany, setDebouncedCompany] = useState('');
 
   useEffect(() => {
-    fetchQuestions();
-    // eslint-disable-next-line
-  }, [filters, searchQuery]);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setDebouncedCompany(company);
+      setPage(1);
+    }, 350);
 
-  const fetchQuestions = async () => {
+    return () => clearTimeout(timer);
+  }, [search, company]);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
     const params = new URLSearchParams();
-    if (searchQuery) params.append('search', searchQuery);
-    if (filters.difficulty) params.append('difficulty', filters.difficulty);
-    if (filters.company) params.append('company', filters.company);
-    if (filters.role) params.append('role', filters.role);
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    if (debouncedCompany) params.set('company', debouncedCompany);
+    if (difficulty !== 'all') params.set('difficulty', difficulty);
+    params.set('page', String(page));
 
-    const response = await fetch(`/api/questions?${params.toString()}`);
-    const data = await response.json();
-    setQuestions(data);
-  };
+    try {
+      const response = await fetch(`/api/questions?${params.toString()}`);
+      const payload = await response.json();
+
+      if (!response.ok) throw new Error(payload.error || 'Could not load questions');
+
+      setQuestions(Array.isArray(payload.questions) ? payload.questions : []);
+      setHasMore(Boolean(payload.hasMore));
+      setTotal(payload.total ?? 0);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Could not load questions');
+      setQuestions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [debouncedSearch, debouncedCompany, difficulty, page]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Interview Question Bank</h1>
-          <p className="text-ink-muted mt-2">
-            Community-driven interview questions and answers
+          <h1 className="font-display text-4xl font-normal tracking-[-0.01em]">Question bank</h1>
+          <p className="mt-2 text-ink-muted">
+            Real interview questions shared by the community
+            {total > 0 ? ` · ${total} total` : ''}
           </p>
         </div>
         <Link href="/dashboard/question-bank/add">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            Add Question
+            Add question
           </Button>
         </Link>
       </div>
 
-      {/* Search and Filters */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
-                <Input
-                  placeholder="Search questions, companies, roles..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <Select
-              value={filters.difficulty || 'all'}
-              onValueChange={(value) => setFilters({ ...filters, difficulty: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Difficulty" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Difficulties</SelectItem>
-                <SelectItem value="easy">Easy</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="hard">Hard</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
-              More Filters
-            </Button>
+        <CardContent className="grid gap-4 pt-6 md:grid-cols-4">
+          <div className="relative md:col-span-2">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
+            <Input
+              placeholder="Search questions..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="pl-10"
+            />
           </div>
+
+          <Input
+            placeholder="Filter by company"
+            value={company}
+            onChange={(event) => setCompany(event.target.value)}
+          />
+
+          <Select
+            value={difficulty}
+            onValueChange={(value) => {
+              setDifficulty(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Difficulty" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All difficulties</SelectItem>
+              <SelectItem value="easy">Easy</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="hard">Hard</SelectItem>
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
-      {/* Questions List */}
-      <div className="space-y-4">
-        {questions.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-ink-muted">No questions found</p>
-              <Link href="/dashboard/question-bank/add">
-                <Button variant="outline" className="mt-4">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add First Question
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          questions.map((question: any) => (
-            <Card key={question._id}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-semibold">{question.companyName}</span>
-                  <span className="text-ink-soft text-sm">
-                    {question.jobRole} | {question.interviewRound} | {question.difficulty}
-                  </span>
-                </div>
-                <div className="mb-1">{question.questionText}</div>
-                {question.contributorAnswer && (
-                  <div className="mt-1 text-azure text-sm">
-                    <span className="font-bold">Approach:</span> {question.contributorAnswer}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+      {isLoading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : error ? (
+        <Card>
+          <CardContent className="space-y-4 py-12 text-center">
+            <p className="text-ink-muted">{error}</p>
+            <Button variant="outline" onClick={load}>
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      ) : questions.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center gap-4 py-12">
+            <p className="text-ink-muted">No questions match those filters</p>
+            <Link href="/dashboard/question-bank/add">
+              <Button variant="outline">
+                <Plus className="mr-2 h-4 w-4" />
+                Contribute the first one
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {questions.map((question) => (
+            <QuestionCard key={question._id} question={question} />
+          ))}
+        </div>
+      )}
+
+      {(page > 1 || hasMore) && !isLoading && (
+        <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            disabled={page === 1}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-ink-muted">Page {page}</span>
+          <Button variant="outline" disabled={!hasMore} onClick={() => setPage((value) => value + 1)}>
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

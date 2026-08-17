@@ -1,9 +1,8 @@
-# services/scraping-service/main.py - Complete working version
+# services/scraping-service/main.py — FastAPI research service (scrape + Groq summarise)
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from typing import List
 from datetime import datetime
 import logging
 import requests
@@ -19,11 +18,20 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="PrepAI AI-Powered Research Service")
 
+# Allowed origins come from the environment so a new frontend deployment does not
+# require a code change. Comma separated, e.g.
+# ALLOWED_ORIGINS="http://localhost:3000,https://prep-ai.vercel.app"
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://prep-ai.vercel.app"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
 
@@ -39,6 +47,17 @@ except Exception as e:
 @app.get("/")
 async def root():
     return {"message": "PrepAI AI-Powered Research Service", "status": "running"}
+
+
+@app.get("/health")
+async def health():
+    """Liveness probe for the host platform, and a quick way to confirm that the
+    Next.js app's PYTHON_SERVICE_URL points somewhere real."""
+    return {
+        "status": "ok",
+        "groq_configured": groq_client is not None,
+        "time": datetime.now().isoformat(),
+    }
 
 @app.get("/research/company")
 async def research_company(
@@ -285,11 +304,14 @@ def count_sources(data: dict) -> dict:
     leetcode_count = len(data.get('leetcode', {}).get('common_topics', []))
     medium_count = len(data.get('medium', {}).get('articles', []))
     
+    reddit_count = len(data.get('reddit', {}).get('posts', []))
+
     return {
         "gfg_articles": gfg_count,
         "leetcode_topics": leetcode_count,
         "medium_articles": medium_count,
-        "total": gfg_count + leetcode_count + medium_count
+        "reddit_posts": reddit_count,
+        "total": gfg_count + leetcode_count + medium_count + reddit_count,
     }
 
 if __name__ == "__main__":

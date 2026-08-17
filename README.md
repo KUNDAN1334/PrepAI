@@ -1,87 +1,77 @@
-# Prep AI - AI-Powered Interview Preparation Platform
+# Prep AI
 
-> Your complete interview companion powered by artificial intelligence
+An AI-assisted placement preparation platform: mock interviews with per-answer
+grading, resume ↔ job-description analysis, a community question bank, an
+application tracker, and company research.
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-6.3-green)](https://www.mongodb.com/)
-[![Groq AI](https://img.shields.io/badge/Groq-AI-orange)](https://groq.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-
-## 🎯 Overview
-
-Prep AI is an all-in-one AI-powered platform designed to streamline interview preparation and job search management. It combines company research, resume optimization, mock interviews, application tracking, and community-driven interview questions into a unified platform.
-
-### Why Prep AI?
-
-- 🚀 Save hours on research  
-- 📈 Improve ATS resume compatibility  
-- 🎤 Practice with AI-powered mock interviews  
-- 🗂 Stay organized with smart tracking  
-- 🤝 Learn from real interview questions  
+Built with Next.js 16 (App Router), TypeScript, MongoDB/Mongoose, Auth.js v5,
+Tailwind v4 + shadcn-style components, and Groq (Llama 3.1) for every AI call.
+An optional FastAPI service scrapes public interview experiences.
 
 ---
 
-## ✨ Features
+## Quick start
 
-### 🔍 Company Intelligence Engine
-- Aggregates data from Reddit, LinkedIn, Twitter  
-- Interview process by rounds  
-- Salary insights  
-- Candidate reviews  
-- 7-day intelligent caching  
+```bash
+npm install
+cp .env.example .env.local     # fill in MONGODB_URI, AUTH_SECRET, GROQ_API_KEY
+npm run dev                    # http://localhost:3000
+```
 
-### 📄 AI Resume Optimizer
-- Upload PDF/DOCX  
-- Match score (0–100%)  
-- ATS compatibility analysis  
-- Missing keywords detection  
-- Detailed improvement suggestions  
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm run build` / `npm start` | Production build and server |
+| `npm run lint` | ESLint |
+| `npm test` | Unit tests (`node --test`, no database needed) |
 
-### 🎤 Mock Interview Simulator
-- Company/role-specific questions  
-- Real-time Q&A  
-- AI scoring + feedback  
-- Strengths & improvement insights  
-- Interview history  
+### Required environment variables
 
-### 📊 Application Tracker
-- Kanban, table & calendar views  
-- Track interviews & rounds  
-- Smart reminders  
-- Analytics dashboard  
-- Export to CSV/PDF  
+| Variable | Why |
+| --- | --- |
+| `MONGODB_URI` | Mongo connection string (`DATABASE_URL` also accepted) |
+| `AUTH_SECRET` | Signs the session JWT — `openssl rand -base64 32` |
+| `GROQ_API_KEY` | Resume analysis, interview generation and grading |
 
-### 💬 Interview Question Bank
-- Community question sharing  
-- Filters for role/company/difficulty  
-- Upvotes/downvotes  
-- Answer contributions  
-- AI duplicate detection  
+Optional: `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, `GITHUB_ID` /
+`GITHUB_SECRET` (OAuth providers are only registered when their pair is present),
+`GROQ_MODEL`, `PYTHON_SERVICE_URL`.
 
 ---
 
-## 🛠️ Tech Stack
+## Layout
 
-### Frontend
-- Next.js 14  
-- TypeScript  
-- TailwindCSS  
-- Shadcn/UI  
+```
+app/
+  (auth)/login, (auth)/register     Auth screens
+  api/                              Route handlers (the entire backend)
+  dashboard/                        Product screens
+components/                         UI: applications, questions, resume, landing, ui primitives
+lib/                                auth, db, groq, http/api helpers, quota, resume parsing, validation
+models/                             Mongoose schemas
+services/scraping-service/          Optional FastAPI research service
+tests/                              Unit tests for the pure logic
+```
 
-### Backend
-- Node.js  
-- Next.js API Routes  
-- NextAuth.js v5  
-- MongoDB + Mongoose  
-
-### AI & Parsing
-- Groq API  
-- pdf-parse, mammoth  
-
-### Deployment
-- Vercel  
-- MongoDB Atlas  
+`LEARNING.md` is the full technical walkthrough (every flow, every design
+decision). `INTERVIEW.md` prepares you to defend the project in an interview.
 
 ---
+
+## Optional research service
+
+```bash
+cd services/scraping-service
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000     # then set PYTHON_SERVICE_URL=http://localhost:8000
+```
+
+Without it, company research degrades to curated source links instead of failing.
+
+---
+
+## Deployment
+
+Deploy the Next.js app anywhere that runs Node (Vercel being the obvious choice):
+set the environment variables above, point `AUTH_URL` at the deployed origin, and
+add the deployed URL to `ALLOWED_ORIGINS` on the Python service if you run one.

@@ -75,7 +75,7 @@ const UserSchema = new Schema<IUser>({
     groqApiCalls: {
       dailyLimit: { type: Number, default: 50 },
       usedToday: { type: Number, default: 0 },
-      lastResetDate: { type: Date, default: 0 }
+      lastResetDate: { type: Date, default: Date.now }
     }
   },
   reputation: {
@@ -89,4 +89,8 @@ const UserSchema = new Schema<IUser>({
   timestamps: true
 });
 
-export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+const User =
+  (mongoose.models.User as mongoose.Model<IUser>) ||
+  mongoose.model<IUser>('User', UserSchema);
+
+export default User;

@@ -1,21 +1,25 @@
 // app/dashboard/mock-interview/[sessionId]/page.tsx
 'use client';
 
-import { useState, useEffect, use, useCallback } from 'react';
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, ArrowRight, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, ArrowRight, Send, Loader2 } from 'lucide-react';
+
+const MIN_ANSWER_LENGTH = 100;
 
 interface Question {
   questionNumber: number;
   question: string;
   category: string;
   difficulty: string;
+  answered: boolean;
+  userAnswer: string;
 }
 
 export default function MockInterviewSessionPage({
@@ -26,285 +30,282 @@ export default function MockInterviewSessionPage({
   const { sessionId } = use(params);
   const router = useRouter();
   const { toast } = useToast();
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answer, setAnswer] = useState('');
-  const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [startTime, setStartTime] = useState(Date.now());
 
-  // Wrap fetchSession in useCallback
-  const fetchSession = useCallback(async () => {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [submitted, setSubmitted] = useState<Set<number>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // A ref, not state: the timer must not re-render the textarea on every keystroke.
+  const questionStartedAt = useRef<number>(Date.now());
+
+  const load = useCallback(async () => {
     try {
-      setIsLoading(true);
       const response = await fetch(`/api/mock-interview/${sessionId}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to load interview session');
-      }
-      
-      const data = await response.json();
-      
-      if (!data.questions || data.questions.length === 0) {
-        throw new Error('No questions found for this session');
-      }
-      
-      setQuestions(data.questions);
-    } catch (error: any) {
-      console.error('Error fetching session:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to load interview session',
-        variant: 'destructive',
-      });
-      
-      setTimeout(() => {
-        router.push('/dashboard/mock-interview/setup');
-      }, 2000);
+      const payload = await response.json();
+
+      if (!response.ok) throw new Error(payload.error || 'Could not load this interview');
+      if (!payload.questions?.length) throw new Error('This interview has no questions');
+
+      setQuestions(payload.questions);
+      // Restore work already saved on the server so a refresh (or a closed laptop)
+      // does not lose answers — the API returns what was previously submitted.
+      setAnswers(
+        Object.fromEntries(
+          payload.questions.map((q: Question) => [q.questionNumber, q.userAnswer ?? ''])
+        )
+      );
+      setSubmitted(
+        new Set(
+          payload.questions
+            .filter((q: Question) => q.answered)
+            .map((q: Question) => q.questionNumber)
+        )
+      );
+
+      // Resume at the first unanswered question.
+      const firstUnanswered = payload.questions.findIndex((q: Question) => !q.answered);
+      setIndex(firstUnanswered === -1 ? 0 : firstUnanswered);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Could not load this interview');
     } finally {
       setIsLoading(false);
     }
-  }, [sessionId, toast, router]);
+  }, [sessionId]);
 
   useEffect(() => {
-    fetchSession();
-  }, [fetchSession]);
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    questionStartedAt.current = Date.now();
+  }, [index]);
+
+  const current = questions[index];
+  const answer = current ? (answers[current.questionNumber] ?? '') : '';
+  const answeredCount = submitted.size;
+  const progress = questions.length ? (answeredCount / questions.length) * 100 : 0;
+  const isLast = index === questions.length - 1;
+
+  const allSubmitted = useMemo(
+    () => questions.length > 0 && questions.every((q) => submitted.has(q.questionNumber)),
+    [questions, submitted]
+  );
+
+  /**
+   * Every answer is graded the moment the candidate moves on.
+   *
+   * The original build kept all answers in React state and only ever POSTed the
+   * final one, so questions 1..n-1 were never stored or scored and the session
+   * never reached "completed". Submitting per question also means an interrupted
+   * interview keeps the feedback for everything answered so far.
+   */
+  const submitCurrent = useCallback(async (): Promise<boolean> => {
+    if (!current) return false;
+
+    const text = (answers[current.questionNumber] ?? '').trim();
+
+    if (text.length < MIN_ANSWER_LENGTH) {
+      toast({
+        title: 'Answer too short',
+        description: `Write at least ${MIN_ANSWER_LENGTH} characters (${text.length} so far).`,
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`/api/mock-interview/${sessionId}/answer`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionNumber: current.questionNumber,
+          answer: text,
+          timeSpent: Math.floor((Date.now() - questionStartedAt.current) / 1000),
+        }),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) throw new Error(payload.error || 'Failed to submit answer');
+
+      setSubmitted((previous) => new Set(previous).add(current.questionNumber));
+
+      if (payload.evaluationError) {
+        toast({ title: 'Answer saved', description: payload.evaluationError });
+      }
+
+      return true;
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to submit answer',
+        variant: 'destructive',
+      });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [answers, current, sessionId, toast]);
+
+  const handleNext = async () => {
+    const ok = await submitCurrent();
+    if (ok && !isLast) setIndex((value) => value + 1);
+  };
+
+  const handleFinish = async () => {
+    const ok = await submitCurrent();
+    if (!ok) return;
+
+    const unanswered = questions.filter(
+      (q) => q.questionNumber !== current?.questionNumber && !submitted.has(q.questionNumber)
+    );
+
+    if (unanswered.length > 0) {
+      toast({
+        title: 'Some questions are unanswered',
+        description: `Question ${unanswered[0].questionNumber} still needs an answer.`,
+        variant: 'destructive',
+      });
+      setIndex(questions.findIndex((q) => q.questionNumber === unanswered[0].questionNumber));
+      return;
+    }
+
+    router.push(`/dashboard/mock-interview/feedback/${sessionId}`);
+  };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-          <p className="text-ink-muted">Loading interview session...</p>
+          <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin" />
+          <p className="text-ink-muted">Loading your interview...</p>
         </div>
       </div>
     );
   }
 
-  if (!questions || questions.length === 0) {
+  if (loadError || !current) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <p className="text-ink-muted mb-4">No questions available for this session</p>
-          <Button onClick={() => router.push('/dashboard/mock-interview/setup')}>
-            Start New Interview
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="space-y-4 text-center">
+          <p className="text-ink-muted">{loadError ?? 'This interview is unavailable.'}</p>
+          <Button onClick={() => router.push('/dashboard/mock-interview')}>
+            Start a new interview
           </Button>
         </div>
       </div>
     );
   }
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-  const isLastQuestion = currentQuestionIndex === questions.length - 1;
-
-  const handleNext = () => {
-    if (!answer.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please provide an answer',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (answer.trim().length < 100) {
-      toast({
-        title: 'Answer too short',
-        description: 'Please provide at least 100 characters',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Save current answer
-    setAnswers({ ...answers, [currentQuestionIndex]: answer });
-    
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setAnswer(answers[currentQuestionIndex + 1] || '');
-      setStartTime(Date.now());
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      // Save current answer before going back
-      if (answer.trim()) {
-        setAnswers({ ...answers, [currentQuestionIndex]: answer });
-      }
-      
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setAnswer(answers[currentQuestionIndex - 1] || '');
-    }
-  };
-
-  const handleSubmitFinal = async () => {
-    if (!answer.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please provide an answer',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (answer.trim().length < 100) {
-      toast({
-        title: 'Answer too short',
-        description: 'Please provide at least 100 characters',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-      
-      console.log('Submitting final answer...');
-      console.log('Question number:', currentQuestion.questionNumber);
-      console.log('Session ID:', sessionId);
-      
-      const response = await fetch(
-        `/api/mock-interview/${sessionId}/answer`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            questionNumber: currentQuestion.questionNumber,
-            answer: answer.trim(),
-            timeSpent,
-          }),
-        }
-      );
-
-      console.log('Response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error response:', errorData);
-        throw new Error(errorData.error || 'Failed to submit answer');
-      }
-
-      const data = await response.json();
-      console.log('Response data:', data);
-
-      toast({
-        title: 'Interview completed!',
-        description: 'Redirecting to feedback page...',
-      });
-
-      // Redirect to feedback page
-      console.log('Redirecting to feedback...');
-      
-      // Use window.location instead of router.push for more reliable redirect
-      window.location.href = `/dashboard/mock-interview/feedback/${sessionId}`;
-      
-    } catch (error: any) {
-      console.error('Submit error:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to submit answer',
-        variant: 'destructive',
-      });
-      setIsSubmitting(false);
-    }
-    // Don't set isSubmitting to false here - we're redirecting
-  };
-
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Progress */}
+    <div className="mx-auto max-w-4xl space-y-6">
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
-          <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-          <span>{Math.round(progress)}% Complete</span>
+          <span>
+            Question {index + 1} of {questions.length}
+          </span>
+          <span>
+            {answeredCount} answered ({Math.round(progress)}%)
+          </span>
         </div>
         <Progress value={progress} />
       </div>
 
-      {/* Question Card */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2 mb-2">
-            <Badge>{currentQuestion?.category || 'Question'}</Badge>
-            <Badge variant="outline">{currentQuestion?.difficulty || 'Medium'}</Badge>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <Badge>{current.category}</Badge>
+            <Badge variant="outline">{current.difficulty}</Badge>
+            {submitted.has(current.questionNumber) && (
+              <Badge className="status-positive">
+                <CheckCircle2 className="mr-1 h-3 w-3" />
+                Submitted
+              </Badge>
+            )}
           </div>
-          <CardTitle className="text-xl">{currentQuestion?.question || 'Question not available'}</CardTitle>
+          <CardTitle className="text-xl">{current.question}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea
-            placeholder="Type your answer here... (minimum 100 characters)"
+            placeholder={`Type your answer here... (minimum ${MIN_ANSWER_LENGTH} characters)`}
             value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
+            onChange={(event) =>
+              setAnswers((previous) => ({
+                ...previous,
+                [current.questionNumber]: event.target.value,
+              }))
+            }
             className="min-h-[300px]"
             disabled={isSubmitting}
           />
-          <div className="flex justify-between items-center text-sm text-ink-soft">
+          <div className="flex items-center justify-between text-sm text-ink-soft">
             <span>{answer.length} characters</span>
-            {answer.length < 100 && (
+            {answer.trim().length < MIN_ANSWER_LENGTH && (
               <span className="text-crimson">
-                {100 - answer.length} more characters needed
+                {MIN_ANSWER_LENGTH - answer.trim().length} more needed
               </span>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Navigation */}
-      <div className="flex justify-between">
+      <div className="flex flex-wrap justify-between gap-3">
         <Button
           variant="outline"
-          onClick={handlePrevious}
-          disabled={currentQuestionIndex === 0 || isSubmitting}
+          onClick={() => setIndex((value) => Math.max(0, value - 1))}
+          disabled={index === 0 || isSubmitting}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Previous
         </Button>
 
-        {isLastQuestion ? (
-          <Button 
-            onClick={handleSubmitFinal} 
-            disabled={isSubmitting || !answer.trim() || answer.length < 100}
-            size="lg"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting Interview...
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-4 w-4" />
-                Submit Interview
-              </>
-            )}
-          </Button>
-        ) : (
-          <Button 
-            onClick={handleNext}
-            disabled={!answer.trim() || answer.length < 100}
-          >
-            Next
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        )}
-      </div>
+        <div className="flex gap-3">
+          {allSubmitted && (
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/dashboard/mock-interview/feedback/${sessionId}`)}
+            >
+              View feedback
+            </Button>
+          )}
 
-      {/* Debug info (remove in production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-ink-soft p-4 bg-paper rounded">
-          <div>Current Index: {currentQuestionIndex}</div>
-          <div>Total Questions: {questions.length}</div>
-          <div>Is Last: {isLastQuestion.toString()}</div>
-          <div>Session ID: {sessionId}</div>
-          <div>Submitting: {isSubmitting.toString()}</div>
+          {isLast ? (
+            <Button onClick={handleFinish} disabled={isSubmitting} size="lg">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Grading...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Submit interview
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button onClick={handleNext} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Grading...
+                </>
+              ) : (
+                <>
+                  Submit &amp; next
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

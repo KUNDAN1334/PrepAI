@@ -94,11 +94,14 @@ ApplicationSchema.pre('save', function(next) {
   next();
 });
 
-// Clear any existing model
-if (mongoose.models.Application) {
-  delete mongoose.models.Application;
-}
-
-const Application = mongoose.model<IApplication>('Application', ApplicationSchema);
+/**
+ * Reuse the compiled model when it already exists on the mongoose singleton.
+ * Next.js hot-reloads modules in dev and reuses the Node process between
+ * serverless invocations, so recompiling (or deleting and recompiling) a model
+ * throws OverwriteModelError and silently detaches existing `populate()` refs.
+ */
+const Application =
+  (mongoose.models.Application as mongoose.Model<IApplication>) ||
+  mongoose.model<IApplication>('Application', ApplicationSchema);
 
 export default Application;

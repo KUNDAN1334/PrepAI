@@ -1,49 +1,43 @@
 // app/api/applications/[id]/status/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import connectDB from '@/lib/db';
+import Application from '@/models/Application';
+import { ApiError, parseBody, requireObjectId, requireUserId, withErrorHandling } from '@/lib/api';
+import { applicationStatusSchema } from '@/lib/validation';
+
 export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import connectDB from '@/lib/db';
-import mongoose from 'mongoose';
-
-export async function PATCH(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+/**
+ * Dedicated endpoint for the Kanban board's drag-and-drop: a status change is a
+ * single-field, high-frequency write, so it gets its own PATCH rather than
+ * round-tripping the whole application through PUT.
+ */
+export const PATCH = withErrorHandling(
+  'application:status',
+  async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
+    const userId = await requireUserId();
     const { id } = await context.params;
-    const { status } = await req.json();
-    
+    requireObjectId(id, 'application id');
+
+    const { status } = await parseBody(req, applicationStatusSchema);
+
     await connectDB();
-    await import('@/models/Application');
-    const Application = mongoose.models.Application;
 
-    const application = await Application.findOne({
-      _id: id,
-      userId: session.user.id,
-    });
+    const application = await Application.findOne({ _id: id, userId });
 
-    if (!application) {
-      return NextResponse.json({ error: 'Application not found' }, { status: 404 });
+    if (!application) throw new ApiError(404, 'Application not found');
+
+    if (application.status === status) {
+      // No-op: avoid writing a duplicate statusHistory entry when a card is
+      // dropped back into the column it came from.
+      return NextResponse.json(application);
     }
 
     application.status = status;
     application.lastUpdated = new Date();
-    // statusHistory is automatically updated via pre-save hook
-
+    // statusHistory is appended by the pre('save') hook on the schema.
     await application.save();
 
     return NextResponse.json(application);
-  } catch (error) {
-    console.error('Error updating status:', error);
-    return NextResponse.json(
-      { error: 'Failed to update status' },
-      { status: 500 }
-    );
   }
-}
+);

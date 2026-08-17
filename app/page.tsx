@@ -1,6 +1,6 @@
 // app/page.tsx
 import Link from 'next/link';
-import { ArrowRight, Check, Sparkles } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 
 import Navigation, { BrandMark } from '@/components/Navigation';
 import MagneticLink from '@/components/landing/MagneticLink';

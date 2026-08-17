@@ -1,89 +1,83 @@
 // app/api/questions/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import type { FilterQuery } from 'mongoose';
 import connectDB from '@/lib/db';
-import Question from '@/models/Question';
+import Question, { type IQuestion } from '@/models/Question';
 import User from '@/models/User';
 import { generateQuestionTags } from '@/lib/groq';
+import { escapeRegex, parseBody, requireUserId, withErrorHandling } from '@/lib/api';
+import { questionCreateSchema } from '@/lib/validation';
 
-// GET: Fetch and filter questions
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const search = searchParams.get('search');
-    const difficulty = searchParams.get('difficulty');
-    const company = searchParams.get('company');
-    const role = searchParams.get('role');
+export const dynamic = 'force-dynamic';
 
-    await connectDB();
+const PAGE_SIZE = 20;
 
-    const query: any = {};
+/** Public read: the question bank is browsable without an account. */
+export const GET = withErrorHandling('questions:GET', async (req: NextRequest) => {
+  const { searchParams } = new URL(req.url);
+  const search = searchParams.get('search')?.trim();
+  const difficulty = searchParams.get('difficulty');
+  const company = searchParams.get('company')?.trim();
+  const role = searchParams.get('role')?.trim();
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
 
-    if (search) {
-      query.$text = { $search: search };
-    }
-    if (difficulty && difficulty !== 'all') {
-      query.difficulty = difficulty;
-    }
-    if (company) {
-      query.companyName = new RegExp(company, 'i');
-    }
-    if (role) {
-      query.jobRole = new RegExp(role, 'i');
-    }
+  await connectDB();
 
-    const questions = await Question.find(query)
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .populate('contributorId', 'name image'); // Populates contributor info
+  const query: FilterQuery<IQuestion> = {};
 
-    return NextResponse.json(questions);
-  } catch (error) {
-    console.error('Error fetching questions:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch questions' },
-      { status: 500 }
-    );
-  }
-}
+  // $text uses the compound text index declared on the schema, so full-text search
+  // stays on the database instead of pulling every question into Node.
+  if (search) query.$text = { $search: search };
+  if (difficulty && difficulty !== 'all') query.difficulty = difficulty;
+  // escapeRegex: without it, a user typing "c++" produces an invalid regex and a
+  // crafted input like "(a+)+$" becomes a ReDoS against the database.
+  if (company) query.companyName = new RegExp(escapeRegex(company), 'i');
+  if (role) query.jobRole = new RegExp(escapeRegex(role), 'i');
 
-// POST: Create new question with AI tags + reputation update
-export async function POST(req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  const [questions, total] = await Promise.all([
+    Question.find(query)
+      .sort(search ? { score: { $meta: 'textScore' } } : { createdAt: -1 })
+      .skip((page - 1) * PAGE_SIZE)
+      .limit(PAGE_SIZE)
+      .populate('contributorId', 'name image')
+      .lean(),
+    Question.countDocuments(query),
+  ]);
 
-    const body = await req.json();
-    await connectDB();
+  return NextResponse.json({
+    questions: questions.map((question) => ({
+      ...question,
+      // Anonymous contributions must not leak the contributor through populate().
+      contributorId: question.isAnonymous ? null : question.contributorId,
+    })),
+    page,
+    pageSize: PAGE_SIZE,
+    total,
+    hasMore: page * PAGE_SIZE < total,
+  });
+});
 
-    // Auto-generate tags if none provided
-    let tags = body.tags || [];
-    if (tags.length === 0) {
-      tags = await generateQuestionTags(body.questionText);
-    }
+export const POST = withErrorHandling('questions:POST', async (req: NextRequest) => {
+  const userId = await requireUserId();
+  const data = await parseBody(req, questionCreateSchema);
 
-    const question = await Question.create({
-      contributorId: session.user.id,
-      ...body,
-      tags,
-    });
+  await connectDB();
 
-    // Update the user's reputation for contribution
-    await User.findByIdAndUpdate(session.user.id, {
-      $inc: {
-        'reputation.totalPoints': 5,
-        'reputation.questionContributions': 1,
-      },
-    });
+  // Only fall back to the LLM when the contributor left tags empty — this keeps the
+  // common path free of a network call to Groq.
+  const tags = data.tags.length > 0 ? data.tags : await generateQuestionTags(data.questionText);
 
-    return NextResponse.json(question, { status: 201 });
-  } catch (error) {
-    console.error('Error creating question:', error);
-    return NextResponse.json(
-      { error: 'Failed to create question' },
-      { status: 500 }
-    );
-  }
-}
+  const question = await Question.create({
+    ...data,
+    tags,
+    contributorId: userId,
+  });
+
+  // $inc is atomic, so two contributions submitted at once both count.
+  await User.updateOne(
+    { _id: userId },
+    { $inc: { 'reputation.totalPoints': 5, 'reputation.questionContributions': 1 } }
+  );
+
+  return NextResponse.json(question, { status: 201 });
+});

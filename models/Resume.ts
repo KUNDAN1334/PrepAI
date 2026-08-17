@@ -34,11 +34,8 @@ const ResumeSchema = new Schema<IResume>({
   timestamps: true
 });
 
-// Clear any existing model
-if (mongoose.models.Resume) {
-  delete mongoose.models.Resume;
-}
-
-const Resume = mongoose.model<IResume>('Resume', ResumeSchema);
+const Resume =
+  (mongoose.models.Resume as mongoose.Model<IResume>) ||
+  mongoose.model<IResume>('Resume', ResumeSchema);
 
 export default Resume;

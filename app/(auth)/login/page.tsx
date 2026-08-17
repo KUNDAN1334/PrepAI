@@ -1,9 +1,9 @@
 // app/(auth)/login/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import AuthShell from '@/components/auth/AuthShell';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Middleware appends ?callbackUrl=... when it bounces someone off a dashboard
+  // page, so signing in returns them to where they were headed.
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -32,14 +36,16 @@ export default function LoginPage() {
 
       if (result?.error) {
         toast({
-          title: 'Error',
+          title: 'Sign in failed',
           description: 'Invalid email or password',
           variant: 'destructive',
         });
       } else {
-        router.push('/dashboard');
+        router.push(callbackUrl);
+        // Refresh so server components re-render with the new session cookie.
+        router.refresh();
       }
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Something went wrong',
@@ -51,7 +57,7 @@ export default function LoginPage() {
   };
 
   const handleOAuthSignIn = async (provider: 'google' | 'github') => {
-    await signIn(provider, { callbackUrl: '/dashboard' });
+    await signIn(provider, { callbackUrl });
   };
 
   return (
@@ -133,5 +139,18 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </AuthShell>
+  );
+}
+
+/**
+ * `useSearchParams()` opts a route into client-side rendering, so Next requires a
+ * Suspense boundary above it. Without this the whole /login page would fail the
+ * build with "useSearchParams should be wrapped in a suspense boundary".
+ */
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -35,10 +35,11 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
+    // Mirrors the server-side rule in app/api/auth/register/route.ts.
+    if (formData.password.length < 8) {
       toast({
         title: 'Error',
-        description: 'Password must be at least 6 characters',
+        description: 'Password must be at least 8 characters',
         variant: 'destructive',
       });
       return;
@@ -60,7 +61,8 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+        const detail = data.details ? Object.values(data.details)[0] : null;
+        throw new Error((detail as string) || data.error || 'Registration failed');
       }
 
       toast({
@@ -71,10 +73,10 @@ export default function RegisterPage() {
       setTimeout(() => {
         router.push('/login');
       }, 1500);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create account',
+        description: error instanceof Error ? error.message : 'Failed to create account',
         variant: 'destructive',
       });
     } finally {
@@ -124,7 +126,7 @@ export default function RegisterPage() {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
                 disabled={isLoading}
-                minLength={6}
+                minLength={8}
               />
             </div>
             <div className="space-y-2">
@@ -137,7 +139,7 @@ export default function RegisterPage() {
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 required
                 disabled={isLoading}
-                minLength={6}
+                minLength={8}
               />
             </div>
             <Button type="submit" size="lg" className="w-full" disabled={isLoading}>

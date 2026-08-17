@@ -1,0 +1,11 @@
+{
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/api/mock-interview/[sessionId]/route": "app/api/mock-interview/[sessionId]/route.js",
+  "/dashboard/mock-interview/page": "app/dashboard/mock-interview/page.js",
+  "/dashboard/applications/page": "app/dashboard/applications/page.js",
+  "/dashboard/profile/page": "app/dashboard/profile/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/company-research/page": "app/dashboard/company-research/page.js",
+  "/dashboard/mock-interview/[sessionId]/page": "app/dashboard/mock-interview/[sessionId]/page.js",
+  "/dashboard/question-bank/page": "app/dashboard/question-bank/page.js"
+}

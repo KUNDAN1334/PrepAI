@@ -50,23 +50,24 @@ export default function MockInterviewPage() {
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create interview');
-      }
-
       const data = await response.json();
 
+      if (!response.ok) {
+        // Zod validation errors arrive as { error, details: { field: message } }.
+        const detail = data.details ? Object.values(data.details)[0] : null;
+        throw new Error((detail as string) || data.error || 'Failed to create interview');
+      }
+
       toast({
-        title: 'Interview created!',
-        description: 'Redirecting to interview...',
+        title: 'Interview ready',
+        description: `${data.totalQuestions} questions generated. Good luck!`,
       });
 
       router.push(`/dashboard/mock-interview/${data.sessionId}`);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Something went wrong',
         variant: 'destructive',
       });
     } finally {
@@ -89,7 +90,7 @@ export default function MockInterviewPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Job Details</CardTitle>
-                <CardDescription>Tell us about the role you're preparing for</CardDescription>
+                <CardDescription>Tell us about the role you&apos;re preparing for</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
