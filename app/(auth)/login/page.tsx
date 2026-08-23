@@ -63,7 +63,7 @@ function LoginForm() {
   return (
     <AuthShell
       eyebrow="welcome back"
-      title="Sign in to Prep AI"
+      title="Sign in to PrepAI"
       subtitle="Pick up right where you left off."
     >
       <Card className="w-full shadow-[8px_8px_0_var(--ink)]">

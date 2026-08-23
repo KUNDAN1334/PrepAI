@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import MagneticLink from '@/components/landing/MagneticLink';
+import { LogoMark, Wordmark } from '@/components/brand/Logo';
 
 const links = [
   { label: 'Why PrepAI', href: '#why' },
@@ -15,31 +16,6 @@ const links = [
   { label: 'Stories', href: '#stories' },
   { label: 'FAQ', href: '#faq' },
 ];
-
-/** The PrepAI wordmark — a stylised lightbulb/idea glyph in a rounded square. */
-export function BrandMark({ className = 'h-[34px] w-[34px]' }: { className?: string }) {
-  return (
-    <div
-      className={`flex items-center justify-center rounded-lg border-[1.5px] border-ink ${className}`}
-    >
-      <svg
-        viewBox="0 0 32 32"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-[19px] w-[19px]"
-        aria-hidden="true"
-      >
-        <path d="M16 4.5c-2.2-.2-3.4 1.1-3.5 3.1-.1 2.2-.2 4.6 0 6.6.2 2.3 1.6 3.3 3.6 3.2 2-.1 3.2-1.2 3.3-3.3.1-2.1.1-4.5 0-6.6-.1-2-1.3-3.2-3.4-3z" />
-        <path d="M9.2 13.4c-.3 2.6.6 5.2 3 6.6 2.5 1.5 5.7 1.3 7.9-.5 1.9-1.5 2.6-3.9 2.4-6.1" />
-        <path d="M16 20.6c.1 1.9.1 3.6 0 5.6" />
-        <path d="M12.4 26.4c2.6-.4 4.9-.3 7.3 0" />
-      </svg>
-    </div>
-  );
-}
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -102,11 +78,15 @@ export default function Navigation() {
         )}
       >
         {/* Brand */}
-        <Link href="/" className="group flex shrink-0 items-center gap-3 text-ink">
+        <Link
+          href="/"
+          aria-label="PrepAI — home"
+          className="group flex shrink-0 items-center gap-3 text-ink"
+        >
           <span className="transition-transform duration-300 group-hover:-rotate-6">
-            <BrandMark />
+            <LogoMark />
           </span>
-          <span className="text-[19px] font-extrabold tracking-[-0.01em]">PrepAI</span>
+          <Wordmark className="text-[19px]" />
         </Link>
 
         {/* Desktop links */}

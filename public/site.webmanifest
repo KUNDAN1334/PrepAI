@@ -1,0 +1,16 @@
+{
+  "name": "PrepAI — AI-Powered Interview Preparation",
+  "short_name": "PrepAI",
+  "description": "Mock interviews, resume optimization, company research and a shared question bank in one focused workspace.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#e9e7e1",
+  "theme_color": "#141210",
+  "icons": [
+    { "src": "/logo-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,6 +1,6 @@
 // components/auth/AuthShell.tsx
 import Link from 'next/link';
-import { BrandMark } from '@/components/Navigation';
+import Logo from '@/components/brand/Logo';
 
 interface AuthShellProps {
   eyebrow: string;
@@ -36,9 +36,8 @@ export default function AuthShell({ eyebrow, title, subtitle, children }: AuthSh
 
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-6 flex flex-col items-center text-center">
-          <Link href="/" className="flex items-center gap-3 text-ink">
-            <BrandMark />
-            <span className="text-xl font-extrabold tracking-[-0.01em]">PrepAI</span>
+          <Link href="/" aria-label="PrepAI — home" className="text-ink">
+            <Logo size="lg" />
           </Link>
           <div className="eyebrow-hand mt-4 text-[26px] text-crimson">{eyebrow}</div>
           <h1 className="font-display text-[34px] font-normal leading-[1.05] text-ink sm:text-[40px]">

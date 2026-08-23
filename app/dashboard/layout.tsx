@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import Image from 'next/image';
+import Logo from '@/components/brand/Logo';
 import {
   Home,
   Search,
@@ -54,15 +54,9 @@ export default function DashboardLayout({
           >
             <Menu className="h-6 w-6" />
           </Button>
-          <Image
-              src="/logo.png"
-              alt="Prep AI Logo"
-              width={36}
-              height={36}
-              priority
-              className="rounded-full"
-            />
-          <h1 className="text-xl font-extrabold tracking-[-0.01em]">Prep AI</h1>
+          <Link href="/dashboard" aria-label="PrepAI — dashboard" className="text-ink">
+            <Logo size="md" />
+          </Link>
         </div>
 
       </div>
@@ -76,8 +70,14 @@ export default function DashboardLayout({
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-6">
-            <h1 className="text-xl font-extrabold tracking-[-0.01em]">Prep AI</h1>
+          <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-5">
+            <Link
+              href="/dashboard"
+              aria-label="PrepAI — dashboard"
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <Logo variant="onDark" wordmarkClassName="text-sidebar-foreground" />
+            </Link>
             <Button
               variant="ghost"
               size="icon"

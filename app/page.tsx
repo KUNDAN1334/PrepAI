@@ -2,7 +2,8 @@
 import Link from 'next/link';
 import { ArrowRight, Check } from 'lucide-react';
 
-import Navigation, { BrandMark } from '@/components/Navigation';
+import Navigation from '@/components/Navigation';
+import Logo from '@/components/brand/Logo';
 import MagneticLink from '@/components/landing/MagneticLink';
 import {
   Counter,
@@ -169,7 +170,7 @@ const STACK = [
 
 const FAQS = [
   {
-    q: 'Is Prep AI free to start?',
+    q: 'Is PrepAI free to start?',
     a: 'Yes. Create an account and run your first mock interviews and resume scans at no cost — no card required. Paid tiers only raise the daily and monthly limits.',
   },
   {
@@ -472,7 +473,7 @@ export default function LandingPage() {
         {/* ============================================================ */}
         <section id="why" className="relative z-10 gutter border-b-[1.5px] border-ink py-20 lg:py-28">
           <Reveal className="mb-12 max-w-[760px]">
-            <Eyebrow>why prep ai?</Eyebrow>
+            <Eyebrow>why prepAI?</Eyebrow>
             <SectionTitle className="mt-2">
               Five ways it moves your job hunt forward
             </SectionTitle>
@@ -851,9 +852,8 @@ export default function LandingPage() {
         <footer className="relative z-10 gutter border-t-[1.5px] border-ink bg-paper py-14">
           <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
             <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="flex items-center gap-3 text-ink">
-                <BrandMark />
-                <span className="text-[19px] font-extrabold tracking-[-0.01em]">PrepAI</span>
+              <Link href="/" aria-label="PrepAI — home" className="text-ink">
+                <Logo />
               </Link>
               <p className="mt-4 max-w-[28ch] text-[13.5px] font-medium leading-[1.6] text-ink-muted">
                 The focused workspace for interview prep.
@@ -884,7 +884,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t-[1.5px] border-dashed border-ink pt-6 text-[13px] font-medium text-ink-muted sm:flex-row">
-            <span>© {new Date().getFullYear()} Prep AI. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} PrepAI. All rights reserved.</span>
             <span className="font-hand text-[17px]">built for people who hate winging it</span>
           </div>
         </footer>
